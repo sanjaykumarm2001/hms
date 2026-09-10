@@ -23,7 +23,12 @@ import {
   roomStatusTone } from
 '../utils/tone';
 
-type Filter = 'all' | HousekeepingStatus;
+function nextAction(status: HousekeepingStatus): { label: string; next: HousekeepingStatus } | null {
+  if (status === 'dirty') return { label: 'Start cleaning', next: 'cleaning' };
+  if (status === 'cleaning') return { label: 'Mark clean', next: 'clean' };
+  if (status === 'clean') return { label: 'Mark inspected', next: 'inspected' };
+  return null;
+}
 
 export function Housekeeping() {
   const { rooms, ops, setHousekeeping, assignHousekeeper, setHousekeepingPriority, reservations, guestName } =
@@ -34,7 +39,12 @@ export function Housekeeping() {
   const list = useMemo(
     () =>
     rooms.
-    filter((room) => filter === 'all' ? true : room.housekeeping === filter).
+    filter((room) => {
+      if (filter === 'dirty') return room.housekeeping === 'dirty';
+      if (filter === 'cleaning') return room.housekeeping === 'cleaning';
+      if (filter === 'completed') return room.housekeeping === 'clean' || room.housekeeping === 'inspected';
+      return true;
+    }).
     filter((room) => priority === 'all' ? true : room.housekeepingPriority === priority).
     sort((a, b) => {
       const rank = (value: HousekeepingPriority) => value === 'high' ? 0 : value === 'normal' ? 1 : 2;
@@ -44,29 +54,20 @@ export function Housekeeping() {
   );
 
   const { counts } = ops;
-  const total = counts.dirty + counts.cleaning + counts.clean + counts.inspected;
-
-  function nextAction(status: HousekeepingStatus) {
-    if (status === 'dirty') return { label: 'Start cleaning', next: 'cleaning' as HousekeepingStatus };
-    if (status === 'cleaning') return { label: 'Mark clean', next: 'clean' as HousekeepingStatus };
-    if (status === 'clean') return { label: 'Mark inspected', next: 'inspected' as HousekeepingStatus };
-    return null;
-  }
+  const completedCount = counts.clean + counts.inspected;
 
   return (
     <div>
       <PageHeader
         eyebrow="Operations"
         title="Housekeeping"
-        subtitle="Dirty → Cleaning → Clean → Inspected. Departures land here automatically at high priority." />
-      
+        subtitle="Dirty → Cleaning → Completed. Departures land here automatically at high priority." />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
         { label: 'Dirty', value: counts.dirty, icon: BrushIcon },
         { label: 'Cleaning', value: counts.cleaning, icon: SparklesIcon },
-        { label: 'Clean', value: counts.clean, icon: CheckCheckIcon },
-        { label: 'Inspected', value: counts.inspected, icon: CheckCheckIcon }].
+        { label: 'Completed', value: completedCount, icon: CheckCheckIcon }].
         map((item) =>
         <Card key={item.label} className="p-4">
             <div className="flex items-start justify-between">
@@ -74,11 +75,6 @@ export function Housekeeping() {
               <item.icon aria-hidden="true" className="h-4 w-4 text-ink-muted" />
             </div>
             <p className="tabular mt-3 text-[26px] font-bold leading-none text-ink">{item.value}</p>
-            <ProgressBar
-            className="mt-4"
-            value={total ? item.value / total * 100 : 0}
-            label={`${item.label} share`} />
-          
           </Card>
         )}
       </div>
@@ -88,8 +84,7 @@ export function Housekeeping() {
           tabs={[
           { id: 'dirty', label: 'Dirty', count: counts.dirty },
           { id: 'cleaning', label: 'Cleaning', count: counts.cleaning },
-          { id: 'clean', label: 'Clean', count: counts.clean },
-          { id: 'inspected', label: 'Inspected', count: counts.inspected },
+          { id: 'completed', label: 'Completed', count: completedCount },
           { id: 'all', label: 'All rooms', count: rooms.length }]
           }
           active={filter}
@@ -98,13 +93,13 @@ export function Housekeeping() {
         <SelectInput
           value={priority}
           onChange={(event) => setPriority(event.target.value as 'all' | HousekeepingPriority)}
-          className="w-[170px]"
+          className="w-[125px]"
           aria-label="Filter by priority">
           
-          <option value="all">All priorities</option>
-          <option value="high">High priority</option>
-          <option value="normal">Normal priority</option>
-          <option value="low">Low priority</option>
+          <option value="all">Priority: All</option>
+          <option value="high">High</option>
+          <option value="normal">Normal</option>
+          <option value="low">Low</option>
         </SelectInput>
       </div>
 

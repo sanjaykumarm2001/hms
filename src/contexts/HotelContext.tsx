@@ -62,6 +62,21 @@ export interface CheckInInput {
   registrationSigned: boolean;
 }
 
+export interface NewTicketInput {
+  roomId: string;
+  category: 'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  description: string;
+}
+
+export interface NewStaffInput {
+  name: string;
+  role: string;
+  shift: string;
+  email: string;
+  phone: string;
+}
+
 interface HotelContextValue {
   today: string;
   currentUser: StaffMember;
@@ -107,6 +122,8 @@ interface HotelContextValue {
   assignHousekeeper: (roomId: string, housekeeper: string) => void;
   setHousekeepingPriority: (roomId: string, priority: HousekeepingPriority) => void;
   updateTicket: (ticketId: string, patch: Partial<MaintenanceTicket>) => void;
+  addTicket: (input: NewTicketInput) => MaintenanceTicket;
+  addStaffMember: (input: NewStaffInput) => StaffMember;
   addGuestNote: (guestId: string, content: string) => void;
   updateSettings: (patch: Partial<PropertySettings>) => void;
 }
@@ -121,7 +138,7 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
   const [charges, setCharges] = useState<Charge[]>(seed.charges);
   const [payments, setPayments] = useState<Payment[]>(seed.payments);
   const [tickets, setTickets] = useState<MaintenanceTicket[]>(seed.tickets);
-  const [staff] = useState<StaffMember[]>(seed.staff);
+  const [staff, setStaff] = useState<StaffMember[]>(seed.staff);
   const [settings, setSettings] = useState<PropertySettings>(seed.settings);
   const counter = useRef(1000);
 
@@ -601,6 +618,44 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     [currentUser.name, today]
   );
 
+  const addTicket = useCallback(
+    (input: NewTicketInput) => {
+      const newTicket: MaintenanceTicket = {
+        id: nextId('MT'),
+        code: `TCK-${Math.floor(1000 + Math.random() * 9000)}`,
+        roomId: input.roomId,
+        category: input.category,
+        priority: input.priority,
+        status: 'open',
+        description: input.description,
+        reportedAt: stamp(),
+        assignedTo: 'Unassigned'
+      };
+      setTickets((prev) => [newTicket, ...prev]);
+      toast.success(`Maintenance ticket ${newTicket.code} created`);
+      return newTicket;
+    },
+    [nextId, stamp]
+  );
+
+  const addStaffMember = useCallback(
+    (input: NewStaffInput) => {
+      const member: StaffMember = {
+        id: nextId('STF'),
+        name: input.name,
+        role: input.role,
+        shift: input.shift,
+        email: input.email,
+        phone: input.phone,
+        status: 'On Duty'
+      };
+      setStaff((prev) => [member, ...prev]);
+      toast.success(`Staff member ${member.name} added`);
+      return member;
+    },
+    [nextId]
+  );
+
   const updateSettings = useCallback((patch: Partial<PropertySettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
     toast.success('Property settings saved');
@@ -640,6 +695,8 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     assignHousekeeper,
     setHousekeepingPriority,
     updateTicket,
+    addTicket,
+    addStaffMember,
     addGuestNote,
     updateSettings
   };

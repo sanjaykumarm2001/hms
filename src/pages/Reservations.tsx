@@ -1,20 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusIcon } from 'lucide-react';
+import { CalendarDaysIcon, DoorOpenIcon, PlusIcon } from 'lucide-react';
+import { AvailabilityView } from '../components/reservations/AvailabilityView';
+import { CalendarView } from '../components/reservations/CalendarView';
 import {
   Card,
   EmptyState,
   PageHeader,
   PrimaryButton,
+  SecondaryButton,
   SearchInput,
   SelectInput,
   StatusPill,
-  Tabs } from
-'../components/ui';
+  Tabs
+} from '../components/ui';
 import { useHotel } from '../contexts/HotelContext';
 import { NewReservationDialog } from '../components/workflows/NewReservationDialog';
-import { CalendarView } from '../components/reservations/CalendarView';
-import { AvailabilityView } from '../components/reservations/AvailabilityView';
 import type { ReservationStatus } from '../types/hotel';
 import { money, nightsBetween, shortDate } from '../utils/format';
 import { paymentLabel, paymentTone, reservationLabel, reservationTone } from '../utils/tone';
@@ -26,10 +27,12 @@ export function Reservations() {
   const navigate = useNavigate();
   const { reservations, guestName, getRoom, folio, ops } = useHotel();
   const [view, setView] = useState<View>('list');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [bookingMode, setBookingMode] = useState<'reservation' | 'walk-in'>('reservation');
+
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'all' | ReservationStatus>('all');
   const [sort, setSort] = useState<SortKey>('arrival');
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -49,7 +52,7 @@ export function Reservations() {
       if (sort === 'created') return b.createdAt.localeCompare(a.createdAt);
       return (
         folio(b.id).chargeTotal - folio(a.id).chargeTotal ||
-        b.rate * nightsBetween(b.arrival, b.departure) - a.rate * nightsBetween(a.arrival, a.departure));
+        b.rate * nightsBetween(b.arrival, b.departure) - a.rate * nightsBetween(b.arrival, b.departure));
 
     });
   }, [folio, getRoom, guestName, query, reservations, sort, status]);
@@ -68,10 +71,16 @@ export function Reservations() {
         title="Reservations"
         subtitle={`${reservations.length} reservations in the system · ${ops.arrivals.length} arriving today`}
         actions={
-        <PrimaryButton gradient onClick={() => setDialogOpen(true)}>
-            <PlusIcon aria-hidden="true" className="h-4 w-4" />
-            New reservation
-          </PrimaryButton>
+          <div className="flex items-center gap-2">
+            <SecondaryButton onClick={() => { setBookingMode('walk-in'); setDialogOpen(true); }}>
+              <DoorOpenIcon aria-hidden="true" className="h-4 w-4 text-brand-700" />
+              Walk-in
+            </SecondaryButton>
+            <PrimaryButton gradient onClick={() => { setBookingMode('reservation'); setDialogOpen(true); }}>
+              <PlusIcon aria-hidden="true" className="h-4 w-4" />
+              New reservation
+            </PrimaryButton>
+          </div>
         } />
       
 
@@ -86,17 +95,17 @@ export function Reservations() {
           onChange={(next) => setView(next as View)} />
         
         {view === 'list' ?
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
             <SearchInput
             value={query}
             onChange={setQuery}
             placeholder="Search guest, code, room…"
-            className="w-[260px]" />
+            className="w-[240px]" />
           
             <SelectInput
             value={status}
             onChange={(event) => setStatus(event.target.value as 'all' | ReservationStatus)}
-            className="w-[168px]"
+            className="w-[160px]"
             aria-label="Filter by status">
             
               <option value="all">All statuses</option>
@@ -152,7 +161,7 @@ export function Reservations() {
                   <tr
                     key={reservation.id}
                     onClick={() => navigate(`/reservations/${reservation.id}`)}
-                    className="cursor-pointer transition-colors duration-150 hover:bg-[#fafbf8]">
+                    className="cursor-pointer transition-colors duration-150 hover:bg-emerald-50/60">
                     
                         <td className="py-3 pl-5 pr-3">
                           <p className="text-[13px] font-semibold text-ink">

@@ -90,17 +90,17 @@ export function Guests() {
         } />
       
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <SearchInput
           value={query}
           onChange={setQuery}
           placeholder="Search name, email, phone, company…"
-          className="w-[280px]" />
+          className="w-[260px]" />
         
         <SelectInput
           value={tier}
           onChange={(event) => setTier(event.target.value as 'all' | GuestTier)}
-          className="w-[150px]"
+          className="w-[140px]"
           aria-label="Filter by tier">
           
           <option value="all">All tiers</option>
@@ -113,7 +113,7 @@ export function Guests() {
         <SelectInput
           value={segment}
           onChange={(event) => setSegment(event.target.value as 'all' | GuestSegment)}
-          className="w-[150px]"
+          className="w-[140px]"
           aria-label="Filter by segment">
           
           <option value="all">All segments</option>
@@ -130,13 +130,11 @@ export function Guests() {
         <EmptyState title="No guests match" detail="Try a different search term or clear the filters." /> :
 
         <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-left">
+            <table className="w-full min-w-[720px] text-left">
               <thead>
                 <tr className="bg-[#fafbf8] text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
                   <th scope="col" className="py-2.5 pl-5 pr-3 font-semibold">Guest</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Contact</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Tier</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Segment</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Stays</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Last stay</th>
                   <th scope="col" className="px-3 py-2.5 pr-5 text-right font-semibold">Balance</th>
@@ -147,7 +145,7 @@ export function Guests() {
               <tr
                 key={guest.id}
                 onClick={() => navigate(`/guests/${guest.id}`)}
-                className="cursor-pointer transition-colors duration-150 hover:bg-[#fafbf8]">
+                className="cursor-pointer transition-colors duration-150 hover:bg-emerald-50/60">
                 
                     <td className="py-3 pl-5 pr-3">
                       <div className="flex items-center gap-3">
@@ -169,12 +167,6 @@ export function Guests() {
                       <p className="text-[12px] text-ink-soft">{guest.email}</p>
                       <p className="text-[11px] text-ink-muted">{guest.phone}</p>
                     </td>
-                    <td className="px-3 py-3">
-                      <StatusPill tone={TIER_TONE[guest.tier]} dot={false}>
-                        {guest.tier}
-                      </StatusPill>
-                    </td>
-                    <td className="px-3 py-3 text-[12px] text-ink-soft">{guest.segment}</td>
                     <td className="tabular px-3 py-3 text-[13px] font-semibold text-ink">{stays}</td>
                     <td className="tabular px-3 py-3 text-[12px] text-ink-soft">
                       {last ? shortDate(last.arrival) : '—'}

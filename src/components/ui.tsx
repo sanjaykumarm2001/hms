@@ -5,12 +5,9 @@ import { SearchIcon, XIcon } from 'lucide-react';
 export function Card({
   children,
   className = ''
-
-
-
 }: {children: React.ReactNode;className?: string;}) {
   return (
-    <section className={`rounded-card border border-line bg-white shadow-card ${className}`}>
+    <section className={`relative overflow-hidden rounded-2xl border border-white/70 bg-white/75 backdrop-blur-xl shadow-md transition-all duration-200 hover:shadow-xl hover:shadow-brand-900/10 hover:border-brand-300/90 hover:bg-brand-wash before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-gradient-v before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-200 ${className}`}>
       {children}
     </section>);
 
@@ -47,7 +44,7 @@ export function PrimaryButton({
       type="button"
       {...rest}
       className={[
-      'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50',
+      'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm',
       gradient ? 'bg-brand-gradient hover:brightness-[1.06]' : 'bg-brand-600 hover:bg-brand-500',
       className].
       join(' ')}>
@@ -66,7 +63,7 @@ export function SecondaryButton({
     <button
       type="button"
       {...rest}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink transition-colors duration-150 hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
+      className={`inline-flex items-center justify-center gap-2 rounded-lg border border-line/80 bg-white/80 backdrop-blur-sm px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition-all duration-150 hover:bg-white hover:text-ink hover:border-line disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
       
       {children}
     </button>);

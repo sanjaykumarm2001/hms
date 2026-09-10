@@ -47,7 +47,7 @@ export function FrontDesk() {
   ).
   sort((a, b) => a.number.localeCompare(b.number));
 
-  const paymentIssues = ops.outstanding.filter((row) => row.reservation.status === 'in-house');
+
 
   return (
     <div>
@@ -55,18 +55,7 @@ export function FrontDesk() {
         eyebrow="Operations"
         title="Front Desk"
         subtitle="The desk workspace for arrivals, departures, walk-ins and in-house guests."
-        actions={
-        <>
-            <SecondaryButton onClick={() => setBookingMode('walk-in')}>
-              <DoorOpenIcon aria-hidden="true" className="h-4 w-4" />
-              Walk-in
-            </SecondaryButton>
-            <PrimaryButton gradient onClick={() => setBookingMode('reservation')}>
-              <PlusIcon aria-hidden="true" className="h-4 w-4" />
-              New booking
-            </PrimaryButton>
-          </>
-        } />
+      />
       
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -87,7 +76,7 @@ export function FrontDesk() {
                 return (
                   <li
                     key={reservation.id}
-                    className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-[#fafbf8]">
+                    className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-emerald-50/60">
                     
                       <div className="min-w-[180px] flex-1">
                         <Link
@@ -102,30 +91,10 @@ export function FrontDesk() {
                           {shortDate(reservation.arrival)} → {shortDate(reservation.departure)}
                         </p>
                       </div>
-                      <div className="tabular w-[92px] text-[13px] font-semibold text-ink">
-                        {room ? `Room ${room.number}` : <span className="text-ink-muted">No room</span>}
-                      </div>
-                      <div className="w-[104px]">
-                        {room ?
-                      <StatusPill tone={housekeepingTone[room.housekeeping]}>
-                            {housekeepingLabel[room.housekeeping]}
-                          </StatusPill> :
-
-                      <StatusPill tone="amber">Assign</StatusPill>
-                      }
-                      </div>
                       <div className="flex items-center gap-2">
-                        {!room ?
-                      <SecondaryButton className="px-3 py-2" onClick={() => setAssignId(reservation.id)}>
-                            <BedDoubleIcon aria-hidden="true" className="h-4 w-4" />
-                            Assign room
-                          </SecondaryButton> :
-                      null}
                         <PrimaryButton
                         className="px-3 py-2"
-                        onClick={() => setCheckInId(reservation.id)}
-                        disabled={!room}
-                        title={!room ? 'Assign a room first' : ready ? undefined : 'Room not inspected yet'}>
+                        onClick={() => setCheckInId(reservation.id)}>
                         
                           <LogInIcon aria-hidden="true" className="h-4 w-4" />
                           Check in
@@ -153,7 +122,7 @@ export function FrontDesk() {
                 return (
                   <li
                     key={reservation.id}
-                    className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-[#fafbf8]">
+                    className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-emerald-50/60">
                     
                       <div className="min-w-[180px] flex-1">
                         <Link
@@ -207,7 +176,7 @@ export function FrontDesk() {
                   {ops.inHouse.map((reservation) => {
                   const room = getRoom(reservation.roomId);
                   return (
-                    <tr key={reservation.id} className="transition-colors duration-150 hover:bg-[#fafbf8]">
+                    <tr key={reservation.id} className="transition-colors duration-150 hover:bg-emerald-50/60">
                         <td className="py-3 pl-5 pr-3">
                           <Link
                           to={`/reservations/${reservation.id}`}
@@ -306,38 +275,7 @@ export function FrontDesk() {
             }
           </Card>
 
-          <Card className="overflow-hidden">
-            <CardHeader
-              title="Payment issues"
-              subtitle={`${paymentIssues.length} in-house folios with a balance`} />
-            
-            {paymentIssues.length === 0 ?
-            <p className="border-t border-line px-5 py-8 text-center text-[12px] text-ink-muted">
-                All in-house folios are current.
-              </p> :
 
-            <ul className="divide-y divide-line border-t border-line">
-                {paymentIssues.slice(0, 6).map(({ reservation, balance }) =>
-              <li key={reservation.id}>
-                    <Link
-                  to={`/billing/${reservation.id}`}
-                  className="flex items-center justify-between gap-3 px-5 py-2.5 transition-colors duration-150 hover:bg-[#fafbf8]">
-                  
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-semibold text-ink">
-                          {guestName(reservation.guestId)}
-                        </span>
-                        <span className="block text-[11px] text-ink-muted">
-                          Room {getRoom(reservation.roomId)?.number ?? '—'}
-                        </span>
-                      </span>
-                      <span className="tabular text-[13px] font-bold text-ink">{money(balance)}</span>
-                    </Link>
-                  </li>
-              )}
-              </ul>
-            }
-          </Card>
         </div>
       </div>
 

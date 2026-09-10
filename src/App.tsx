@@ -15,7 +15,6 @@ import { Housekeeping } from './pages/Housekeeping';
 import { Maintenance } from './pages/Maintenance';
 import { Billing } from './pages/Billing';
 import { InvoiceDetails } from './pages/InvoiceDetails';
-import { Reports } from './pages/Reports';
 import { GuestActivity } from './pages/GuestActivity';
 import { Staff } from './pages/Staff';
 import { Settings } from './pages/Settings';
@@ -47,7 +46,7 @@ export function App({ startAuthenticated = true }: AppProps) {
             <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/billing/:reservationId" element={<InvoiceDetails />} />
-            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports" element={<Navigate to="/billing?tab=reports" replace />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

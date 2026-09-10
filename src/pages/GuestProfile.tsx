@@ -105,7 +105,7 @@ export function GuestProfile() {
                     const room = getRoom(stay.roomId);
                     const f = folio(stay.id);
                     return (
-                      <tr key={stay.id} className="transition-colors duration-150 hover:bg-[#fafbf8]">
+                      <tr key={stay.id} className="transition-colors duration-150 hover:bg-emerald-50/60">
                           <td className="py-3 pl-5 pr-3">
                             <Link
                             to={`/reservations/${stay.id}`}

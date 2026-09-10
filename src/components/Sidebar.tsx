@@ -13,8 +13,7 @@ import {
   SettingsIcon,
   UserCogIcon,
   UsersIcon,
-  WrenchIcon,
-  ChartNoAxesColumnIcon
+  WrenchIcon
 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { LodgelyLogo } from './LodgelyLogo';
@@ -91,39 +90,38 @@ export function Sidebar() {
       icon: ConciergeBellIcon,
       badge: ops.arrivals.length + ops.departures.length
     },
+    { to: '/guests', label: 'Guests', icon: UsersIcon },
     { to: '/reservations', label: 'Reservations', icon: CalendarDaysIcon },
     { to: '/guest-activity', label: 'Guest Activity', icon: ActivityIcon },
     { to: '/rooms', label: 'Rooms', icon: BedDoubleIcon },
-    { to: '/guests', label: 'Guests', icon: UsersIcon },
     { to: '/housekeeping', label: 'Housekeeping', icon: BrushCleaningIcon, badge: hkLoad },
     { to: '/maintenance', label: 'Maintenance', icon: WrenchIcon, badge: openTickets },
     { to: '/billing', label: 'Billing', icon: ReceiptTextIcon, badge: ops.outstanding.length }
   ];
 
   const insights = [
-    { to: '/reports', label: 'Reports', icon: ChartNoAxesColumnIcon },
     { to: '/staff', label: 'Staff', icon: UserCogIcon }
   ];
 
   return (
     <aside
-      className={`flex shrink-0 flex-col overflow-y-auto border-r border-line bg-white transition-all duration-200 ${
+      className={`flex shrink-0 flex-col overflow-y-auto border-r border-white/80 bg-white/80 backdrop-blur-md transition-all duration-200 ${
         collapsed ? 'w-[68px]' : 'w-[228px]'
       }`}
     >
-      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-line px-3.5">
+      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-line px-3">
         <LodgelyLogo compact={collapsed} />
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 border border-brand-200 text-brand-700 shadow-sm hover:bg-brand-100 hover:scale-105 transition-all"
         >
           {collapsed ? (
-            <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+            <ChevronRightIcon className="h-4 w-4 stroke-[2.5]" />
           ) : (
-            <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+            <ChevronLeftIcon className="h-4 w-4 stroke-[2.5]" />
           )}
         </button>
       </div>

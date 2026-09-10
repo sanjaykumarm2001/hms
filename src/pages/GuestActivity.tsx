@@ -1,20 +1,22 @@
 import { useMemo, useState } from 'react';
 import {
+  DoorOpenIcon,
   DownloadIcon,
-  FilterIcon,
   LockIcon,
+  LogOutIcon,
   MousePointerClickIcon,
   ReceiptIcon,
+  SelectInput,
   ShieldAlertIcon,
   SparklesIcon
 } from 'lucide-react';
-import { PageHeader, PrimaryButton, SecondaryButton, SearchInput } from '../components/ui';
+import { PageHeader, PrimaryButton, SearchInput } from '../components/ui';
 
 export interface ActivityEvent {
   id: string;
   title: string;
-  category: 'access' | 'pos' | 'security' | 'wellness';
-  status: 'GRANTED' | 'DENIED' | 'CHARGED';
+  category: 'room' | 'access' | 'pos' | 'security' | 'wellness';
+  status: 'GRANTED' | 'DENIED' | 'CHARGED' | 'IN' | 'OUT';
   guestName: string;
   roomNumber: string;
   timestamp: string;
@@ -26,26 +28,62 @@ export interface ActivityEvent {
 
 const SEED_ACTIVITIES: ActivityEvent[] = [
   {
+    id: 'act-101',
+    title: 'Room 402 Entry',
+    category: 'room',
+    status: 'IN',
+    guestName: 'Eleanor Vance',
+    roomNumber: '402',
+    timestamp: 'Just now',
+    detail: 'Keycard unlocked door 402',
+    deviceUid: 'LOCK-RM-402',
+    keycardUid: 'KC-990214'
+  },
+  {
+    id: 'act-102',
+    title: 'Room 1105 Exit',
+    category: 'room',
+    status: 'OUT',
+    guestName: 'Marcus Thorne',
+    roomNumber: '1105',
+    timestamp: '5m ago',
+    detail: 'Door closed & deadbolt engaged',
+    deviceUid: 'LOCK-RM-1105',
+    keycardUid: 'KC-884012'
+  },
+  {
     id: 'act-1',
     title: 'Main Entrance',
     category: 'access',
     status: 'GRANTED',
     guestName: 'Eleanor Vance',
     roomNumber: '402',
-    timestamp: 'Just now',
+    timestamp: '15m ago',
     deviceUid: 'RDR-ENT-01',
     keycardUid: 'KC-990214'
   },
   {
     id: 'act-2',
-    title: 'Spa & Wellness',
+    title: 'Spa & Wellness Center',
     category: 'wellness',
     status: 'GRANTED',
     guestName: 'Marcus Thorne',
     roomNumber: '1105',
-    timestamp: '12m ago',
+    timestamp: '25m ago',
     deviceUid: 'RDR-SPA-03',
     keycardUid: 'KC-884012'
+  },
+  {
+    id: 'act-103',
+    title: 'Room 822 Exit',
+    category: 'room',
+    status: 'OUT',
+    guestName: 'Sarah Jenkins',
+    roomNumber: '822',
+    timestamp: '35m ago',
+    detail: 'Keycard tapped on exit handle',
+    deviceUid: 'LOCK-RM-822',
+    keycardUid: 'KC-772910'
   },
   {
     id: 'act-3',
@@ -55,7 +93,7 @@ const SEED_ACTIVITIES: ActivityEvent[] = [
     guestName: 'Sarah Jenkins',
     roomNumber: '822',
     timestamp: '45m ago',
-    detail: 'Folio charge added',
+    detail: 'Folio charge added ($42.50)',
     amount: 42.50,
     deviceUid: 'POS-BAR-01',
     keycardUid: 'KC-772910'
@@ -71,6 +109,18 @@ const SEED_ACTIVITIES: ActivityEvent[] = [
     detail: 'Invalid keycard swipe detected.',
     deviceUid: 'RDR-ELV-02B',
     keycardUid: 'KC-000000'
+  },
+  {
+    id: 'act-104',
+    title: 'Room 505 Entry',
+    category: 'room',
+    status: 'IN',
+    guestName: 'Daniel Brennan',
+    roomNumber: '505',
+    timestamp: '1h 20m ago',
+    detail: 'Guest keycard door unlock',
+    deviceUid: 'LOCK-RM-505',
+    keycardUid: 'KC-551982'
   },
   {
     id: 'act-5',
@@ -99,12 +149,14 @@ const SEED_ACTIVITIES: ActivityEvent[] = [
 export function GuestActivity() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<'all' | 'access' | 'security' | 'pos'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return SEED_ACTIVITIES
       .filter((act) => (categoryFilter === 'all' ? true : act.category === categoryFilter))
+      .filter((act) => (statusFilter === 'all' ? true : act.status === statusFilter))
       .filter((act) =>
         q
           ? [act.title, act.guestName, act.roomNumber, act.detail, act.status]
@@ -113,7 +165,7 @@ export function GuestActivity() {
               .includes(q)
           : true
       );
-  }, [categoryFilter, query]);
+  }, [categoryFilter, statusFilter, query]);
 
   const selectedEvent = SEED_ACTIVITIES.find((act) => act.id === selectedId);
 
@@ -122,33 +174,59 @@ export function GuestActivity() {
       <PageHeader
         eyebrow="Monitoring"
         title="Activity Pulse"
-        subtitle="Real-time guest movements and access logs."
+        subtitle="Real-time guest movements, room in/out tracking, and access logs."
         actions={
-          <>
-            <SecondaryButton onClick={() => setCategoryFilter(categoryFilter === 'all' ? 'security' : 'all')}>
-              <FilterIcon aria-hidden="true" className="h-4 w-4" />
-              {categoryFilter === 'all' ? 'Filters' : `Filter: ${categoryFilter}`}
-            </SecondaryButton>
-            <PrimaryButton gradient onClick={() => alert('Activity log exported to CSV.')}>
-              <DownloadIcon aria-hidden="true" className="h-4 w-4" />
-              Export Log
-            </PrimaryButton>
-          </>
+          <PrimaryButton gradient onClick={() => alert('Activity log exported to CSV.')}>
+            <DownloadIcon aria-hidden="true" className="h-4 w-4" />
+            Export Log
+          </PrimaryButton>
         }
       />
 
-      <div className="mb-4">
+      {/* Horizontal Inline Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput
           value={query}
           onChange={(val) => setQuery(val)}
-          placeholder="Filter by guest name, room #, or event type…"
-          className="w-full max-w-[480px]"
+          placeholder="Search by guest name or room #…"
+          className="w-[260px]"
         />
+
+        <div className="flex items-center gap-2">
+          <label className="text-[12px] font-semibold text-ink-muted">Category:</label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="h-10 rounded-lg border border-line bg-white px-3 text-[13px] text-ink focus:border-brand-400 focus:outline-none"
+          >
+            <option value="all">All Amenities & Rooms</option>
+            <option value="room">Room Keycard (In/Out)</option>
+            <option value="access">Building Access</option>
+            <option value="wellness">Spa & Fitness</option>
+            <option value="pos">Bar & POS Charges</option>
+            <option value="security">Security Alerts</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-[12px] font-semibold text-ink-muted">In/Out Status:</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 rounded-lg border border-line bg-white px-3 text-[13px] text-ink focus:border-brand-400 focus:outline-none"
+          >
+            <option value="all">All Movements</option>
+            <option value="IN">In (Room Entry)</option>
+            <option value="OUT">Out (Room Exit)</option>
+            <option value="GRANTED">Granted</option>
+            <option value="DENIED">Denied</option>
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* Live Feed Column */}
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-4">
+        <div className="rounded-2xl border border-white/80 bg-white/80 backdrop-blur-md p-5 shadow-card space-y-4">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-[16px] font-bold text-gray-900">Live Feed</h2>
@@ -172,8 +250,8 @@ export function GuestActivity() {
                     onClick={() => setSelectedId(item.id)}
                     className={`flex w-full items-start justify-between rounded-xl border p-4 text-left transition-all ${
                       isSelected
-                        ? 'border-brand-500 bg-blue-50/30 ring-2 ring-brand-500/20'
-                        : 'border-gray-200/80 bg-white hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-light/30 ring-2 ring-brand-500/20'
+                        : 'border-white/80 bg-white/80 backdrop-blur-sm hover:bg-emerald-50/60 hover:border-emerald-200'
                     }`}
                   >
                     <div className="flex items-start gap-3.5">

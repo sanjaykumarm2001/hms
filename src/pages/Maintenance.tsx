@@ -1,17 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangleIcon } from 'lucide-react';
+import { AlertTriangleIcon, PlusIcon, WrenchIcon } from 'lucide-react';
 import {
   Card,
   CardHeader,
   EmptyState,
+  Field,
   KeyValue,
+  Modal,
   PageHeader,
   PrimaryButton,
   SecondaryButton,
   SelectInput,
   StatusPill,
-  Tabs } from
-'../components/ui';
+  Tabs,
+  TextArea
+} from '../components/ui';
 import { useHotel } from '../contexts/HotelContext';
 import { TECHNICIANS } from '../data/seed';
 import type { TicketPriority, TicketStatus } from '../types/hotel';
@@ -20,28 +23,48 @@ import {
   ticketStatusLabel,
   ticketStatusTone,
   roomStatusLabel,
-  roomStatusTone } from
-'../utils/tone';
+  roomStatusTone
+} from '../utils/tone';
 import { shortDate } from '../utils/format';
 
 const FLOW: TicketStatus[] = ['open', 'in-progress', 'awaiting-parts', 'resolved'];
 
 export function Maintenance() {
-  const { tickets, getRoom, updateTicket, ops } = useHotel();
+  const { tickets, rooms, getRoom, updateTicket, addTicket, ops } = useHotel();
   const [status, setStatus] = useState<'all' | TicketStatus>('all');
   const [priority, setPriority] = useState<'all' | TicketPriority>('all');
   const [selectedId, setSelectedId] = useState<string | null>(tickets[0]?.id ?? null);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newRoomId, setNewRoomId] = useState(rooms[0]?.id ?? '');
+  const [newCategory, setNewCategory] = useState<'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other'>('HVAC');
+  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [newDesc, setNewDesc] = useState('');
+
+  const handleCreateTicket = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDesc.trim()) return;
+    const created = addTicket({
+      roomId: newRoomId,
+      category: newCategory,
+      priority: newPriority,
+      description: newDesc
+    });
+    setSelectedId(created.id);
+    setCreateOpen(false);
+    setNewDesc('');
+  };
+
   const list = useMemo(
     () =>
-    tickets.
-    filter((ticket) => status === 'all' ? true : ticket.status === status).
-    filter((ticket) => priority === 'all' ? true : ticket.priority === priority).
-    sort((a, b) => {
-      const rank = (value: TicketPriority) =>
-      value === 'urgent' ? 0 : value === 'high' ? 1 : value === 'normal' ? 2 : 3;
-      return rank(a.priority) - rank(b.priority) || a.code.localeCompare(b.code);
-    }),
+      tickets
+        .filter((ticket) => (status === 'all' ? true : ticket.status === status))
+        .filter((ticket) => (priority === 'all' ? true : ticket.priority === priority))
+        .sort((a, b) => {
+          const rank = (value: TicketPriority) =>
+            value === 'urgent' ? 0 : value === 'high' ? 1 : value === 'normal' ? 2 : 3;
+          return rank(a.priority) - rank(b.priority) || a.code.localeCompare(b.code);
+        }),
     [priority, status, tickets]
   );
 
@@ -58,9 +81,14 @@ export function Maintenance() {
       <PageHeader
         eyebrow="Operations"
         title="Maintenance"
-        subtitle={`${tickets.filter((t) => t.status !== 'resolved').length} open work orders · ${
-        blocking.length} removing rooms from sellable inventory`
-        } />
+        subtitle={`${blocking.length} out-of-service rooms · ${tickets.filter((t) => t.status === 'open').length} open tickets`}
+        actions={
+          <PrimaryButton gradient onClick={() => setCreateOpen(true)}>
+            <PlusIcon aria-hidden="true" className="h-4 w-4" />
+            New ticket
+          </PrimaryButton>
+        }
+      />
       
 
       {blocking.some((ticket) => ticket.priority === 'urgent') ?
@@ -115,7 +143,7 @@ export function Maintenance() {
                     aria-pressed={selected?.id === ticket.id}
                     className={[
                     'flex w-full flex-wrap items-center gap-3 px-5 py-3.5 text-left transition-colors duration-150',
-                    selected?.id === ticket.id ? 'bg-brand-50' : 'hover:bg-[#fafbf8]'].
+                    selected?.id === ticket.id ? 'bg-brand-50' : 'hover:bg-emerald-50/60'].
                     join(' ')}>
                     
                       <span className="w-[76px]">
@@ -249,6 +277,70 @@ export function Maintenance() {
           null}
         </div>
       </div>
-    </div>);
 
+      <Modal
+        open={createOpen}
+        title="Create Maintenance Ticket"
+        subtitle="Report an issue or work order for a room."
+        onClose={() => setCreateOpen(false)}
+        footer={
+          <>
+            <SecondaryButton onClick={() => setCreateOpen(false)}>Cancel</SecondaryButton>
+            <PrimaryButton gradient onClick={handleCreateTicket}>
+              Create Ticket
+            </PrimaryButton>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateTicket} className="space-y-4">
+          <Field label="Target Room">
+            <SelectInput value={newRoomId} onChange={(e) => setNewRoomId(e.target.value)}>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  Room {r.number} ({r.type} · Floor {r.floor})
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Category">
+              <SelectInput
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value as any)}
+              >
+                <option value="HVAC">HVAC / AC</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Carpentry">Carpentry</option>
+                <option value="Appliance">Appliance</option>
+                <option value="Other">Other</option>
+              </SelectInput>
+            </Field>
+
+            <Field label="Priority">
+              <SelectInput
+                value={newPriority}
+                onChange={(e) => setNewPriority(e.target.value as any)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </SelectInput>
+            </Field>
+          </div>
+
+          <Field label="Issue Description">
+            <TextArea
+              rows={3}
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              placeholder="Describe the maintenance issue or work required…"
+              required
+            />
+          </Field>
+        </form>
+      </Modal>
+    </div>);
 }

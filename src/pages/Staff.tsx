@@ -1,27 +1,54 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardHeader, PageHeader, ProgressBar, SelectInput, StatusPill } from '../components/ui';
+import { UserPlusIcon } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  Field,
+  Modal,
+  PageHeader,
+  PrimaryButton,
+  ProgressBar,
+  SecondaryButton,
+  SelectInput,
+  StatusPill,
+  TextInput
+} from '../components/ui';
 import { useHotel } from '../contexts/HotelContext';
 import type { Department } from '../types/hotel';
 
 const DEPARTMENTS: Department[] = ['Front Office', 'Housekeeping', 'Maintenance', 'F&B', 'Management'];
 
 export function Staff() {
-  const { staff, rooms, tickets } = useHotel();
+  const { staff, rooms, tickets, addStaffMember } = useHotel();
   const [department, setDepartment] = useState<'all' | Department>('all');
+  const [addOpen, setAddOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('Front Desk Agent');
+  const [shift, setShift] = useState('Morning (07:00 - 15:30)');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
 
-  const rows = useMemo(
-    () =>
-    staff.
-    filter((member) => department === 'all' ? true : member.department === department).
-    map((member) => {
-      const hkRooms = rooms.filter((room) => room.housekeeper === member.name).length;
-      const openTickets = tickets.filter(
-        (ticket) => ticket.assignee === member.name && ticket.status !== 'resolved'
-      ).length;
-      return { member, hkRooms, openTickets };
-    }),
-    [department, rooms, staff, tickets]
-  );
+  const handleAddStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addStaffMember({ name, role, shift, email, phone });
+    setAddOpen(false);
+    setName('');
+    setEmail('');
+    setPhone('');
+  };
+
+  const rows = useMemo(() => {
+    return staff
+      .filter((member) => (department === 'all' ? true : member.department === department))
+      .map((member) => {
+        const hkRooms = rooms.filter((room) => room.housekeeper === member.name).length;
+        const openTickets = tickets.filter(
+          (ticket) => ticket.assignee === member.name && ticket.status !== 'resolved'
+        ).length;
+        return { member, hkRooms, openTickets };
+      });
+  }, [department, rooms, staff, tickets]);
 
   const onDuty = staff.filter((member) => member.status === 'On Duty').length;
 
@@ -32,20 +59,27 @@ export function Staff() {
         title="Staff"
         subtitle={`${staff.length} team members · ${onDuty} on duty right now`}
         actions={
-        <SelectInput
-          value={department}
-          onChange={(event) => setDepartment(event.target.value as 'all' | Department)}
-          className="w-[190px]"
-          aria-label="Filter by department">
-          
-            <option value="all">All departments</option>
-            {DEPARTMENTS.map((value) =>
-          <option key={value} value={value}>
-                {value}
-              </option>
-          )}
-          </SelectInput>
-        } />
+          <div className="flex items-center gap-2.5">
+            <SelectInput
+              value={department}
+              onChange={(event) => setDepartment(event.target.value as 'all' | Department)}
+              className="w-[170px]"
+              aria-label="Filter by department"
+            >
+              <option value="all">All departments</option>
+              {DEPARTMENTS.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </SelectInput>
+            <PrimaryButton gradient onClick={() => setAddOpen(true)}>
+              <UserPlusIcon aria-hidden="true" className="h-4 w-4" />
+              Add staff
+            </PrimaryButton>
+          </div>
+        }
+      />
       
 
       <Card className="overflow-hidden">
@@ -64,7 +98,7 @@ export function Staff() {
             </thead>
             <tbody className="divide-y divide-line">
               {rows.map(({ member, hkRooms, openTickets }) =>
-              <tr key={member.id} className="transition-colors duration-150 hover:bg-[#fafbf8]">
+              <tr key={member.id} className="transition-colors duration-150 hover:bg-emerald-50/60">
                   <td className="py-3 pl-5 pr-3">
                     <div className="flex items-center gap-3">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-800">
@@ -125,6 +159,70 @@ export function Staff() {
           </table>
         </div>
       </Card>
-    </div>);
 
+      <Modal
+        open={addOpen}
+        title="Add Staff Member"
+        subtitle="Add a new employee to the property team directory."
+        onClose={() => setAddOpen(false)}
+        footer={
+          <>
+            <SecondaryButton onClick={() => setAddOpen(false)}>Cancel</SecondaryButton>
+            <PrimaryButton gradient onClick={handleAddStaff}>
+              Add Member
+            </PrimaryButton>
+          </>
+        }
+      >
+        <form onSubmit={handleAddStaff} className="space-y-3.5">
+          <Field label="Full Name">
+            <TextInput
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah Jenkins"
+              required
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Role">
+              <TextInput
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="Front Desk Agent"
+                required
+              />
+            </Field>
+
+            <Field label="Shift">
+              <SelectInput value={shift} onChange={(e) => setShift(e.target.value)}>
+                <option value="Morning (07:00 - 15:30)">Morning (07:00 - 15:30)</option>
+                <option value="Evening (15:00 - 23:30)">Evening (15:00 - 23:30)</option>
+                <option value="Night (23:00 - 07:30)">Night (23:00 - 07:30)</option>
+              </SelectInput>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Email">
+              <TextInput
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="sarah@lodgely.com"
+              />
+            </Field>
+
+            <Field label="Phone">
+              <TextInput
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 (555) 019-2834"
+              />
+            </Field>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
 }

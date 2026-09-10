@@ -85,7 +85,7 @@ export function TopBar() {
   const criticalCount = ops.alerts.filter((a) => a.level !== 'info').length;
 
   return (
-    <header className="relative z-30 flex h-[68px] shrink-0 items-center gap-6 border-b border-line bg-white px-6">
+    <header className="relative z-30 flex h-[68px] shrink-0 items-center gap-6 border-b border-white/80 bg-white/75 backdrop-blur-md px-6 shadow-sm">
       <div
         ref={containerRef}
         className="relative w-full max-w-[460px]"

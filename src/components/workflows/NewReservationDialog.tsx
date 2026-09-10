@@ -27,8 +27,8 @@ export function NewReservationDialog({
 
 
 }: {open: boolean;mode: 'reservation' | 'walk-in';onClose: () => void;onCreated?: (reservationId: string) => void;}) {
-  const { guests, rooms, ops, settings, createGuest, createReservation, createWalkIn, today } =
-  useHotel();
+  const { guests, rooms, ops, settings, tickets, createGuest, createReservation, createWalkIn, today } =
+    useHotel();
   const walkIn = mode === 'walk-in';
 
   const [guestMode, setGuestMode] = useState<'existing' | 'new'>('existing');
@@ -48,15 +48,17 @@ export function NewReservationDialog({
   const [children, setChildren] = useState(0);
   const [rate, setRate] = useState(settings.roomTypes[0].baseRate);
   const [source, setSource] = useState<BookingSource>(walkIn ? 'Direct' : 'Website');
+  const [bookingStatus, setBookingStatus] = useState<'confirmed' | 'tentative'>('confirmed');
   const [requests, setRequests] = useState('');
   const [error, setError] = useState('');
 
   const availableRooms = useMemo(
     () =>
-    rooms.
-    filter((room) => ops.statusByRoom[room.id] === 'available' && room.type === roomType).
-    sort((a, b) => a.number.localeCompare(b.number)),
-    [ops.statusByRoom, roomType, rooms]
+      rooms
+        .filter((room) => ops.statusByRoom[room.id] === 'available' && room.type === roomType)
+        .filter((room) => !tickets.some((t) => t.roomId === room.id && t.status !== 'resolved'))
+        .sort((a, b) => a.number.localeCompare(b.number)),
+    [ops.statusByRoom, roomType, rooms, tickets]
   );
 
   function handleTypeChange(next: RoomTypeName) {
@@ -131,6 +133,7 @@ export function NewReservationDialog({
       children,
       rate,
       source,
+      status: bookingStatus,
       requests
     };
 
@@ -325,13 +328,21 @@ export function NewReservationDialog({
               
             </Field>
           </div>
+          <Field label="Booking status" className="mt-3">
+            <SelectInput
+              value={bookingStatus}
+              onChange={(e) => setBookingStatus(e.target.value as 'confirmed' | 'tentative')}
+            >
+              <option value="confirmed">Confirmed</option>
+              <option value="tentative">Tentative</option>
+            </SelectInput>
+          </Field>
           <Field label="Guest requests" className="mt-3">
             <TextArea
               rows={2}
               value={requests}
               onChange={(event) => setRequests(event.target.value)}
               placeholder="Late arrival, high floor, cot required…" />
-            
           </Field>
         </section>
 

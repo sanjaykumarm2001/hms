@@ -273,7 +273,7 @@ export function Reports() {
               </thead>
               <tbody className="divide-y divide-line">
                 {table.rows.map((row, rowIndex) =>
-              <tr key={rowIndex} className="transition-colors duration-150 hover:bg-[#fafbf8]">
+              <tr key={rowIndex} className="transition-colors duration-150 hover:bg-emerald-50/60">
                     {row.map((cell, cellIndex) =>
                 <td
                   key={cellIndex}
