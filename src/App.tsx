@@ -16,6 +16,7 @@ import { Maintenance } from './pages/Maintenance';
 import { Billing } from './pages/Billing';
 import { InvoiceDetails } from './pages/InvoiceDetails';
 import { Reports } from './pages/Reports';
+import { GuestActivity } from './pages/GuestActivity';
 import { Staff } from './pages/Staff';
 import { Settings } from './pages/Settings';
 
@@ -38,6 +39,7 @@ export function App({ startAuthenticated = true }: AppProps) {
             <Route path="/front-desk" element={<FrontDesk />} />
             <Route path="/reservations" element={<Reservations />} />
             <Route path="/reservations/:reservationId" element={<ReservationDetails />} />
+            <Route path="/guest-activity" element={<GuestActivity />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/guests" element={<Guests />} />
             <Route path="/guests/:guestId" element={<GuestProfile />} />

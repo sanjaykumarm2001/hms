@@ -1,25 +1,39 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BedDoubleIcon, WrenchIcon } from 'lucide-react';
 import {
   Card,
-  CardHeader,
   KeyValue,
   PageHeader,
   SearchInput,
   SecondaryButton,
   SelectInput,
-  StatusPill } from
-'../components/ui';
+  StatusPill
+} from '../components/ui';
 import { useHotel } from '../contexts/HotelContext';
-import type { HousekeepingStatus, RoomFrontOfficeStatus } from '../types/hotel';
+import type { HousekeepingStatus, Room, RoomFrontOfficeStatus } from '../types/hotel';
 import {
   housekeepingLabel,
   housekeepingTone,
   roomStatusLabel,
   roomStatusTone } from
 '../utils/tone';
-import { money0, shortDate } from '../utils/format';
+import { money0, nightsBetween, shortDate } from '../utils/format';
+
+function getRoomTypeLabel(room: Room): string {
+  if (room.type === 'Executive' || room.type === 'Suite') return 'Executive Suite';
+  if (room.beds.includes('2') || room.beds.toLowerCase().includes('twin')) return 'Double Queen';
+  return `${room.type} King`;
+}
+
+function formatGuestNameShort(fullName: string): string {
+  if (!fullName || fullName === 'Unknown guest') return 'GUEST';
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].toUpperCase();
+  const firstName = parts[0];
+  const lastName = parts[parts.length - 1];
+  return `${lastName.toUpperCase()}, ${firstName.charAt(0).toUpperCase()}.`;
+}
 
 export function Rooms() {
   const navigate = useNavigate();
@@ -36,30 +50,40 @@ export function Rooms() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rooms.
-    filter((room) => floor === 'all' ? true : room.floor === floor).
-    filter((room) => status === 'all' ? true : ops.statusByRoom[room.id] === status).
-    filter((room) => hk === 'all' ? true : room.housekeeping === hk).
-    filter((room) =>
-    q ? [room.number, room.type, room.view, room.beds].join(' ').toLowerCase().includes(q) : true
-    ).
-    sort((a, b) => a.number.localeCompare(b.number));
+    return rooms
+      .filter((room) => (floor === 'all' ? true : room.floor === floor))
+      .filter((room) => (status === 'all' ? true : ops.statusByRoom[room.id] === status))
+      .filter((room) => (hk === 'all' ? true : room.housekeeping === hk))
+      .filter((room) =>
+        q ? [room.number, room.type, room.view, room.beds].join(' ').toLowerCase().includes(q) : true
+      )
+      .sort((a, b) => a.number.localeCompare(b.number));
   }, [floor, hk, ops.statusByRoom, query, rooms, status]);
 
   const selected = rooms.find((room) => room.id === selectedId) ?? filtered[0];
-  const selectedReservation = selected ?
-  reservations.find(
-    (r) =>
-    r.roomId === selected.id && (
-    r.status === 'in-house' ||
-    (r.status === 'confirmed' || r.status === 'tentative') && r.departure > ops.today)
-  ) :
-  undefined;
-  const selectedTickets = selected ?
-  tickets.filter((t) => t.roomId === selected.id && t.status !== 'resolved') :
-  [];
+  const selectedReservation = selected
+    ? reservations.find(
+        (r) =>
+          r.roomId === selected.id &&
+          (r.status === 'in-house' ||
+            ((r.status === 'confirmed' || r.status === 'tentative') && r.departure > ops.today))
+      )
+    : undefined;
+  const selectedTickets = selected
+    ? tickets.filter((t) => t.roomId === selected.id && t.status !== 'resolved')
+    : [];
 
   const floors = [...new Set(rooms.map((room) => room.floor))].sort();
+
+  const roomsByFloor = useMemo(() => {
+    const map = new Map<number, typeof filtered>();
+    for (const room of filtered) {
+      const list = map.get(room.floor) || [];
+      list.push(room);
+      map.set(room.floor, list);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a - b);
+  }, [filtered]);
 
   return (
     <div>
@@ -67,9 +91,9 @@ export function Rooms() {
         eyebrow="Inventory"
         title="Rooms"
         subtitle={`${ops.counts.total} rooms · ${ops.counts.available} available · ${ops.counts.occupied} occupied · ${
-        ops.counts.maintenance + ops.counts.outOfService} blocked`
-        } />
-      
+          ops.counts.maintenance + ops.counts.outOfService
+        } blocked`}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <SearchInput
@@ -79,99 +103,194 @@ export function Rooms() {
             if (searchParams.get('room')) setSearchParams({});
           }}
           placeholder="Search room number, type, view…"
-          className="w-[240px]" />
-        
+          className="w-[240px]"
+        />
+
         <SelectInput
           value={String(floor)}
           onChange={(event) =>
-          setFloor(event.target.value === 'all' ? 'all' : Number(event.target.value))
+            setFloor(event.target.value === 'all' ? 'all' : Number(event.target.value))
           }
           className="w-[140px]"
-          aria-label="Filter by floor">
-          
+          aria-label="Filter by floor"
+        >
           <option value="all">All floors</option>
-          {floors.map((value) =>
-          <option key={value} value={value}>
+          {floors.map((value) => (
+            <option key={value} value={value}>
               Floor {value}
             </option>
-          )}
+          ))}
         </SelectInput>
         <SelectInput
           value={status}
           onChange={(event) => setStatus(event.target.value as 'all' | RoomFrontOfficeStatus)}
           className="w-[168px]"
-          aria-label="Filter by room status">
-          
+          aria-label="Filter by room status"
+        >
           <option value="all">All room statuses</option>
           {(
-          ['available', 'occupied', 'reserved', 'maintenance', 'out-of-service'] as RoomFrontOfficeStatus[]).
-          map((value) =>
-          <option key={value} value={value}>
+            ['available', 'occupied', 'reserved', 'maintenance', 'out-of-service'] as RoomFrontOfficeStatus[]
+          ).map((value) => (
+            <option key={value} value={value}>
               {roomStatusLabel[value]}
             </option>
-          )}
+          ))}
         </SelectInput>
         <SelectInput
           value={hk}
           onChange={(event) => setHk(event.target.value as 'all' | HousekeepingStatus)}
           className="w-[168px]"
-          aria-label="Filter by housekeeping status">
-          
+          aria-label="Filter by housekeeping status"
+        >
           <option value="all">All housekeeping</option>
-          {(['dirty', 'cleaning', 'clean', 'inspected'] as HousekeepingStatus[]).map((value) =>
-          <option key={value} value={value}>
+          {(['dirty', 'cleaning', 'clean', 'inspected'] as HousekeepingStatus[]).map((value) => (
+            <option key={value} value={value}>
               {housekeepingLabel[value]}
             </option>
-          )}
+          ))}
         </SelectInput>
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Card className="overflow-hidden">
-          <CardHeader title="Room rack" subtitle={`${filtered.length} rooms match the current filters`} />
-          {filtered.length === 0 ?
-          <p className="border-t border-line px-5 py-12 text-center text-[12px] text-ink-muted">
+        <div>
+          {filtered.length === 0 ? (
+            <Card className="p-12 text-center text-[12px] text-ink-muted">
               No rooms match these filters.
-            </p> :
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {roomsByFloor.map(([floorNum, floorRooms]) => (
+                <div key={floorNum}>
+                  <div className="mb-3.5 flex items-center gap-2.5">
+                    <div className="h-1.5 w-6 rounded-full bg-[#84cc16]" />
+                    <h2 className="text-[17px] font-bold text-gray-800">
+                      Floor {floorNum}
+                    </h2>
+                  </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-line p-5 sm:grid-cols-3 lg:grid-cols-4">
-              {filtered.map((room) => {
-              const roomStatus = ops.statusByRoom[room.id];
-              const isSelected = selected?.id === room.id;
-              return (
-                <button
-                  key={room.id}
-                  type="button"
-                  onClick={() => setSelectedId(room.id)}
-                  aria-pressed={isSelected}
-                  className={[
-                  'rounded-lg border px-3 py-3 text-left transition-colors duration-150',
-                  isSelected ? 'border-brand-400 bg-brand-50' : 'border-line bg-white hover:bg-[#fafbf8]'].
-                  join(' ')}>
-                  
-                    <div className="flex items-start justify-between">
-                      <span className="tabular text-[18px] font-bold leading-none text-ink">
-                        {room.number}
-                      </span>
-                      <StatusPill tone={roomStatusTone[roomStatus]} dot={false}>
-                        {roomStatusLabel[roomStatus]}
-                      </StatusPill>
-                    </div>
-                    <p className="mt-2 text-[12px] font-semibold text-ink-soft">{room.type}</p>
-                    <p className="text-[11px] text-ink-muted">
-                      {room.beds} · {money0(room.rate)}
-                    </p>
-                    <div className="mt-2">
-                      <StatusPill tone={housekeepingTone[room.housekeeping]}>
-                        {housekeepingLabel[room.housekeeping]}
-                      </StatusPill>
-                    </div>
-                  </button>);
+                  <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {floorRooms.map((room) => {
+                      const roomStatus = ops.statusByRoom[room.id];
+                      const isSelected = selected?.id === room.id;
 
-            })}
+                      const roomRes = reservations.find(
+                        (r) =>
+                          r.roomId === room.id &&
+                          (r.status === 'in-house' ||
+                            ((r.status === 'confirmed' || r.status === 'tentative') &&
+                              r.arrival <= ops.today &&
+                              r.departure > ops.today))
+                      );
+
+                      const roomTicket = tickets.find(
+                        (t) => t.roomId === room.id && t.status !== 'resolved'
+                      );
+
+                      let barColor = 'bg-emerald-500';
+                      let hasGuest = false;
+                      let guestDisplayName = '';
+                      let badgeText = '';
+                      let statusText = '';
+                      let statusTextColor = '';
+
+                      if (roomStatus === 'occupied' || roomRes?.status === 'in-house') {
+                        barColor = 'bg-red-500';
+                        if (roomRes) {
+                          hasGuest = true;
+                          guestDisplayName = formatGuestNameShort(guestName(roomRes.guestId));
+                          badgeText = `Nights: ${nightsBetween(roomRes.arrival, roomRes.departure)}`;
+                        } else {
+                          statusText = 'Occupied';
+                          statusTextColor = 'text-red-600 font-semibold';
+                        }
+                      } else if (
+                        roomStatus === 'reserved' ||
+                        roomRes?.status === 'confirmed' ||
+                        roomRes?.status === 'tentative'
+                      ) {
+                        barColor = 'bg-blue-600';
+                        if (roomRes) {
+                          hasGuest = true;
+                          guestDisplayName = formatGuestNameShort(guestName(roomRes.guestId));
+                          badgeText = 'ETA: 14:00';
+                        } else {
+                          statusText = 'Reserved';
+                          statusTextColor = 'text-blue-600 font-semibold';
+                        }
+                      } else if (
+                        roomStatus === 'maintenance' ||
+                        roomStatus === 'out-of-service' ||
+                        room.outOfService
+                      ) {
+                        barColor = 'bg-slate-500';
+                        statusText = roomTicket ? roomTicket.title : 'HVAC Repair';
+                        statusTextColor = 'text-slate-700 font-semibold';
+                      } else if (
+                        room.housekeeping === 'dirty' ||
+                        room.housekeeping === 'cleaning'
+                      ) {
+                        barColor = 'bg-amber-500';
+                        statusText = 'Needs Cleaning';
+                        statusTextColor = 'text-amber-800 font-semibold';
+                      } else {
+                        // Vacant Ready
+                        barColor = 'bg-emerald-500';
+                        statusText = 'Vacant Ready';
+                        statusTextColor = 'text-emerald-700 font-semibold';
+                      }
+
+                      return (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => setSelectedId(room.id)}
+                          aria-pressed={isSelected}
+                          className={[
+                            'relative flex min-h-[110px] flex-col justify-between rounded-xl border bg-white p-4 pl-5 text-left shadow-sm transition-all duration-150 hover:shadow-md',
+                            isSelected
+                              ? 'border-brand-500 ring-2 ring-brand-500/20'
+                              : 'border-gray-200/80 hover:border-gray-300'
+                          ].join(' ')}
+                        >
+                          {/* Left accent bar */}
+                          <div
+                            className={`absolute bottom-0 left-0 top-0 w-[5px] rounded-l-xl ${barColor}`}
+                          />
+
+                          <div>
+                            <span className="tabular text-[22px] font-bold leading-none tracking-tight text-gray-900">
+                              {room.number}
+                            </span>
+                            <p className="mt-1.5 text-[13px] font-medium text-gray-500">
+                              {getRoomTypeLabel(room)}
+                            </p>
+                          </div>
+
+                          {hasGuest ? (
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                              <span className="truncate text-[13px] font-bold tracking-tight text-gray-900">
+                                {guestDisplayName}
+                              </span>
+                              <span className="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                {badgeText}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="mt-3">
+                              <span className={`text-[13px] ${statusTextColor}`}>
+                                {statusText}
+                              </span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
-          }
-        </Card>
+          )}
+        </div>
 
         <div className="space-y-5">
           {selected ?

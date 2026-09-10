@@ -430,8 +430,8 @@ export function buildSeed(now: Date): HotelSeed {
 
 
   const settings: PropertySettings = {
-    propertyName: 'Meridian Harbour Hotel',
-    propertyCode: 'PROP-04',
+    propertyName: 'Lodgely Resort & Hotel',
+    propertyCode: 'LG-01',
     address: '18 Quay Terrace, Harbour District',
     currency: 'USD',
     checkInTime: '15:00',

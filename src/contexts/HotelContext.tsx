@@ -81,6 +81,7 @@ interface HotelContextValue {
   folio: (reservationId: string) => Folio;
   roomStatus: (roomId: string) => RoomFrontOfficeStatus;
   createGuest: (input: NewGuestInput) => Guest;
+  updateGuest: (id: string, patch: Partial<Guest>) => void;
   createReservation: (input: NewReservationInput) => Reservation;
   createWalkIn: (input: NewReservationInput) => Reservation;
   assignRoom: (reservationId: string, roomId: string) => void;
@@ -222,6 +223,10 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     },
     [nextId, today]
   );
+
+  const updateGuest = useCallback((id: string, patch: Partial<Guest>) => {
+    setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+  }, []);
 
   const buildReservation = useCallback(
     (input: NewReservationInput, walkIn: boolean): Reservation => {
@@ -620,6 +625,7 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     folio,
     roomStatus,
     createGuest,
+    updateGuest,
     createReservation,
     createWalkIn,
     assignRoom,
