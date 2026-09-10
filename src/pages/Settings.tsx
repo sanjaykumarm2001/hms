@@ -41,11 +41,17 @@ export function Settings() {
                 value={draft.currency}
                 onChange={(event) => setDraft({ ...draft, currency: event.target.value })}>
                 
-                {['USD', 'EUR', 'GBP', 'AED'].map((value) =>
-                <option key={value} value={value}>
-                    {value}
+                {[
+                  { code: 'INR', label: 'INR (₹) - Indian Rupee' },
+                  { code: 'USD', label: 'USD ($) - US Dollar' },
+                  { code: 'EUR', label: 'EUR (€) - Euro' },
+                  { code: 'GBP', label: 'GBP (£) - British Pound' },
+                  { code: 'AED', label: 'AED (د.إ) - UAE Dirham' }
+                ].map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.label}
                   </option>
-                )}
+                ))}
               </SelectInput>
             </Field>
             <Field label="Address" className="sm:col-span-2">
@@ -172,7 +178,7 @@ export function Settings() {
           </div>
           <p className="mt-4 text-[12px] text-ink-muted">
             A {draft.depositPercent}% deposit on an average 3-night Deluxe stay is about{' '}
-            {money((draft.roomTypes[1]?.baseRate ?? 0) * 3 * draft.depositPercent / 100)}.
+            {money((draft.roomTypes[1]?.baseRate ?? 0) * 3 * draft.depositPercent / 100, draft.currency)}.
           </p>
         </Card>
 

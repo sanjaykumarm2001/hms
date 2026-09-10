@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { buildSeed } from '../data/seed';
@@ -24,7 +24,7 @@ import type {
   BookingSource } from
 '../types/hotel';
 import { computeOperations, folioFor, type Operations } from '../utils/operations';
-import { isoDate, nightsBetween } from '../utils/format';
+import { isoDate, nightsBetween, setGlobalCurrency } from '../utils/format';
 
 export interface NewGuestInput {
   firstName: string;
@@ -139,8 +139,26 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
   const [payments, setPayments] = useState<Payment[]>(seed.payments);
   const [tickets, setTickets] = useState<MaintenanceTicket[]>(seed.tickets);
   const [staff, setStaff] = useState<StaffMember[]>(seed.staff);
-  const [settings, setSettings] = useState<PropertySettings>(seed.settings);
-  const counter = useRef(1000);
+  const [settings, setSettings] = useState<PropertySettings>(() => {
+    try {
+      const saved = localStorage.getItem('lodgely_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.currency) setGlobalCurrency(parsed.currency);
+        return { ...seed.settings, ...parsed };
+      }
+    } catch {
+      /* ignore */
+    }
+    setGlobalCurrency(seed.settings.currency);
+    return seed.settings;
+  });
+
+  useEffect(() => {
+    if (settings.currency) {
+      setGlobalCurrency(settings.currency);
+    }
+  }, [settings.currency]);
 
   const today = seed.today;
   const currentUser = staff[0];
@@ -657,7 +675,18 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
   );
 
   const updateSettings = useCallback((patch: Partial<PropertySettings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        localStorage.setItem('lodgely_settings', JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      if (next.currency) {
+        setGlobalCurrency(next.currency);
+      }
+      return next;
+    });
     toast.success('Property settings saved');
   }, []);
 

@@ -1,20 +1,40 @@
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 
-export function money(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2
-  }).format(value);
+let activeCurrency = 'USD';
+
+export function setGlobalCurrency(code: string) {
+  if (code) activeCurrency = code;
 }
 
-export function money0(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(value);
+export function getGlobalCurrency(): string {
+  return activeCurrency;
+}
+
+export function money(value: number, currencyCode?: string): string {
+  const code = currencyCode || activeCurrency;
+  try {
+    return new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', {
+      style: 'currency',
+      currency: code,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2
+    }).format(value);
+  } catch {
+    return `${code === 'INR' ? '₹' : '$'}${value.toFixed(2)}`;
+  }
+}
+
+export function money0(value: number, currencyCode?: string): string {
+  const code = currencyCode || activeCurrency;
+  try {
+    return new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', {
+      style: 'currency',
+      currency: code,
+      maximumFractionDigits: 0
+    }).format(value);
+  } catch {
+    return `${code === 'INR' ? '₹' : '$'}${Math.round(value)}`;
+  }
 }
 
 export function isoDate(date: Date): string {

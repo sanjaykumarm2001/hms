@@ -63,3 +63,12 @@ tbody tr:hover {
   background-color: rgba(236, 253, 245, 0.85) !important;
 }
 
+/* Custom Scrollbar Hiding */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

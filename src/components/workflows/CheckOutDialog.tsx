@@ -197,7 +197,7 @@ export function CheckOutDialog({
             <div className="flex justify-between text-gray-600">
               <span>Previous payments</span>
               <span className="font-semibold text-emerald-600">
-                {f.paidTotal > 0 ? `-${money(f.paidTotal)}` : '$0.00'}
+                {f.paidTotal > 0 ? `-${money(f.paidTotal)}` : money(0)}
               </span>
             </div>
             <div className="border-t border-gray-100 pt-2 flex justify-between items-baseline">

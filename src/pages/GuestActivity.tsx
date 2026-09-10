@@ -11,6 +11,7 @@ import {
   SparklesIcon
 } from 'lucide-react';
 import { PageHeader, PrimaryButton, SearchInput } from '../components/ui';
+import { money } from '../utils/format';
 
 export interface ActivityEvent {
   id: string;
@@ -293,7 +294,7 @@ export function GuestActivity() {
 
                         {item.detail && (
                           <p className="mt-0.5 text-[12px] font-medium text-gray-500">
-                            {item.detail} {item.amount ? `: $${item.amount.toFixed(2)}` : ''}
+                            {item.detail} {item.amount ? `: ${money(item.amount)}` : ''}
                           </p>
                         )}
 

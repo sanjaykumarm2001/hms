@@ -105,25 +105,46 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col overflow-y-auto border-r border-white/80 bg-white/80 backdrop-blur-md transition-all duration-200 ${
+      className={`flex shrink-0 flex-col overflow-y-auto overflow-x-hidden no-scrollbar border-r border-white/80 bg-white/80 backdrop-blur-md transition-all duration-200 ${
         collapsed ? 'w-[68px]' : 'w-[228px]'
       }`}
     >
-      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-line px-3">
-        <LodgelyLogo compact={collapsed} />
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 border border-brand-200 text-brand-700 shadow-sm hover:bg-brand-100 hover:scale-105 transition-all"
-        >
-          {collapsed ? (
-            <ChevronRightIcon className="h-4 w-4 stroke-[2.5]" />
-          ) : (
-            <ChevronLeftIcon className="h-4 w-4 stroke-[2.5]" />
-          )}
-        </button>
+      <div
+        className={`flex h-[68px] shrink-0 items-center border-b border-line ${
+          collapsed ? 'justify-center px-1' : 'justify-between px-3'
+        }`}
+      >
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+            className="group relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1 shadow-sm border border-line hover:border-brand-300 transition-all"
+          >
+            <img
+              src="/lodgely-logo.jpg"
+              alt="Lodgely"
+              className="h-7 w-7 shrink-0 rounded-lg object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-white shadow-sm ring-2 ring-white">
+              <ChevronRightIcon className="h-3 w-3 stroke-[3]" />
+            </span>
+          </button>
+        ) : (
+          <>
+            <LodgelyLogo />
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-50 border border-brand-200 text-brand-700 shadow-sm hover:bg-brand-100 hover:scale-105 transition-all ml-1"
+            >
+              <ChevronLeftIcon className="h-4 w-4 stroke-[2.5]" />
+            </button>
+          </>
+        )}
       </div>
 
       <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-2.5 py-4">

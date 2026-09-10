@@ -382,7 +382,7 @@ export function CheckInDialog({
             <div className="flex justify-between text-gray-600">
               <span>Payments on file</span>
               <span className="font-semibold text-emerald-600">
-                {paidTotal > 0 ? `-${money(paidTotal)}` : '$0.00'}
+                {paidTotal > 0 ? `-${money(paidTotal)}` : money(0)}
               </span>
             </div>
             <div className="border-t border-gray-100 pt-2 flex justify-between items-baseline">
