@@ -96,7 +96,7 @@ export function Sidebar() {
     { to: '/rooms', label: 'Rooms', icon: BedDoubleIcon },
     { to: '/housekeeping', label: 'Housekeeping', icon: BrushCleaningIcon, badge: hkLoad },
     { to: '/maintenance', label: 'Maintenance', icon: WrenchIcon, badge: openTickets },
-    { to: '/billing', label: 'Billing', icon: ReceiptTextIcon, badge: ops.outstanding.length }
+    { to: '/billing', label: 'Report', icon: ReceiptTextIcon, badge: ops.outstanding.length }
   ];
 
   const insights = [

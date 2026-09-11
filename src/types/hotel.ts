@@ -108,6 +108,7 @@ export interface Reservation {
   accompanying: string[];
   keyCards: number;
   cancellationReason?: string;
+  includeInReport?: boolean;
   createdAt: string;
   history: HistoryEntry[];
 }

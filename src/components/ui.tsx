@@ -231,11 +231,13 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 
 export function SelectInput(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { className = '', children, ...rest } = props;
+  const hasWidth = className.includes('w-') || className.includes('max-w-') || className.includes('min-w-');
+  const baseClass = hasWidth ? controlClass.replace('w-full', '') : controlClass;
   return (
-    <select {...rest} className={`${controlClass} pr-8 ${className}`}>
+    <select {...rest} className={`${baseClass} pr-8 ${className}`}>
       {children}
-    </select>);
-
+    </select>
+  );
 }
 
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {

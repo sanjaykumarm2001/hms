@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   BedDoubleIcon,
-  CheckCircle2Icon,
   KeyIcon,
   PlusIcon,
   QrCodeIcon,
@@ -47,6 +46,7 @@ export function CheckInDialog({
   const [regulatoryReport, setRegulatoryReport] = useState<'standard' | 'form-c'>('standard');
   const [accompanying, setAccompanying] = useState<string[]>([]);
   const [accompanyingDraft, setAccompanyingDraft] = useState('');
+  const [includeInReport, setIncludeInReport] = useState(true);
 
   // Room Assignment State
   const [roomId, setRoomId] = useState<string>('');
@@ -69,7 +69,10 @@ export function CheckInDialog({
       setIdType(guest.idType || 'Passport');
       setIdNumber(guest.idNumber || '');
     }
-  }, [guest, open]);
+    if (reservation && open) {
+      setIncludeInReport(reservation.includeInReport ?? true);
+    }
+  }, [guest, reservation, open]);
 
   const activeRoomId = roomId || reservation?.roomId || '';
   const room = rooms.find((r) => r.id === activeRoomId);
@@ -127,7 +130,8 @@ export function CheckInDialog({
       depositAmount: deposit,
       method,
       idVerified: Boolean(idNumber.trim() || guest.idNumber),
-      registrationSigned: true
+      registrationSigned: true,
+      includeInReport
     });
 
     setError('');
@@ -356,6 +360,21 @@ export function CheckInDialog({
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="pt-3 border-t border-gray-100">
+            <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-bold text-gray-800">
+              <input
+                type="checkbox"
+                checked={includeInReport}
+                onChange={(e) => setIncludeInReport(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
+              />
+              Include in report
+            </label>
+            <p className="mt-0.5 ml-6 text-[11px] text-gray-500">
+              When checked (default), this reservation appears in financial reports & billing screens. Uncheck to hide it from report/billing views.
+            </p>
           </div>
         </div>
 

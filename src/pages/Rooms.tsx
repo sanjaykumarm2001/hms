@@ -95,7 +95,7 @@ export function Rooms() {
         } blocked`}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput
           value={query}
           onChange={(value) => {
@@ -103,7 +103,7 @@ export function Rooms() {
             if (searchParams.get('room')) setSearchParams({});
           }}
           placeholder="Search room number, type, view…"
-          className="w-[240px]"
+          className="w-full sm:w-[240px] shrink-0"
         />
 
         <SelectInput
@@ -111,7 +111,7 @@ export function Rooms() {
           onChange={(event) =>
             setFloor(event.target.value === 'all' ? 'all' : Number(event.target.value))
           }
-          className="w-[140px]"
+          className="!w-auto min-w-[130px] shrink-0"
           aria-label="Filter by floor"
         >
           <option value="all">All floors</option>
@@ -121,10 +121,11 @@ export function Rooms() {
             </option>
           ))}
         </SelectInput>
+
         <SelectInput
           value={status}
           onChange={(event) => setStatus(event.target.value as 'all' | RoomFrontOfficeStatus)}
-          className="w-[168px]"
+          className="!w-auto min-w-[160px] shrink-0"
           aria-label="Filter by room status"
         >
           <option value="all">All room statuses</option>
@@ -136,10 +137,11 @@ export function Rooms() {
             </option>
           ))}
         </SelectInput>
+
         <SelectInput
           value={hk}
           onChange={(event) => setHk(event.target.value as 'all' | HousekeepingStatus)}
-          className="w-[168px]"
+          className="!w-auto min-w-[160px] shrink-0"
           aria-label="Filter by housekeeping status"
         >
           <option value="all">All housekeeping</option>

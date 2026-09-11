@@ -60,6 +60,7 @@ export interface CheckInInput {
   method: PaymentMethod;
   idVerified: boolean;
   registrationSigned: boolean;
+  includeInReport?: boolean;
 }
 
 export interface NewTicketInput {
@@ -126,6 +127,7 @@ interface HotelContextValue {
   addStaffMember: (input: NewStaffInput) => StaffMember;
   addGuestNote: (guestId: string, content: string) => void;
   updateSettings: (patch: Partial<PropertySettings>) => void;
+  toggleIncludeInReport: (reservationId: string, include: boolean) => void;
 }
 
 const HotelContext = createContext<HotelContextValue | null>(null);
@@ -162,6 +164,7 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
 
   const today = seed.today;
   const currentUser = staff[0];
+  const counter = useRef(100);
 
   const nextId = useCallback((prefix: string) => {
     counter.current += 1;
@@ -381,7 +384,8 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
         status: 'in-house',
         roomId: input.roomId,
         accompanying: input.accompanying,
-        keyCards: input.keyCards
+        keyCards: input.keyCards,
+        includeInReport: input.includeInReport ?? r.includeInReport ?? true
       } :
       r
       )
@@ -690,6 +694,13 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     toast.success('Property settings saved');
   }, []);
 
+  const toggleIncludeInReport = useCallback((reservationId: string, include: boolean) => {
+    setReservations((prev) =>
+      prev.map((r) => (r.id === reservationId ? { ...r, includeInReport: include } : r))
+    );
+    toast.success(include ? 'Guest included in reports' : 'Guest removed from reports');
+  }, []);
+
   const value: HotelContextValue = {
     today,
     currentUser,
@@ -727,7 +738,8 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     addTicket,
     addStaffMember,
     addGuestNote,
-    updateSettings
+    updateSettings,
+    toggleIncludeInReport
   };
 
   return <HotelContext.Provider value={value}>{children}</HotelContext.Provider>;
@@ -737,8 +749,4 @@ export function useHotel(): HotelContextValue {
   const ctx = useContext(HotelContext);
   if (!ctx) throw new Error('useHotel must be used inside HotelProvider');
   return ctx;
-}
-
-export function suggestDeparture(arrival: string, nights: number): string {
-  return isoDate(addDays(parseISO(arrival), Math.max(1, nights)));
 }

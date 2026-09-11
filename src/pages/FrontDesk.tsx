@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRightLeftIcon,
@@ -30,7 +30,7 @@ import { money, money0, shortDate } from '../utils/format';
 
 export function FrontDesk() {
   const navigate = useNavigate();
-  const { ops, rooms, guestName, getRoom, folio, assignRoom, getReservation } = useHotel();
+  const { ops, rooms, reservations, guestName, getRoom, folio, assignRoom, getReservation, today } = useHotel();
 
   const [bookingMode, setBookingMode] = useState<'reservation' | 'walk-in' | null>(null);
   const [checkInId, setCheckInId] = useState<string | null>(null);
@@ -47,7 +47,15 @@ export function FrontDesk() {
   ).
   sort((a, b) => a.number.localeCompare(b.number));
 
-
+  const allArrivals = useMemo(() => {
+    return reservations
+      .filter((r) => r.status === 'confirmed' || r.status === 'tentative')
+      .sort((a, b) => {
+        if (a.arrival === today && b.arrival !== today) return -1;
+        if (a.arrival !== today && b.arrival === today) return 1;
+        return a.arrival.localeCompare(b.arrival);
+      });
+  }, [reservations, today]);
 
   return (
     <div>
@@ -62,31 +70,41 @@ export function FrontDesk() {
         <div className="min-w-0 space-y-5">
           <Card className="overflow-hidden">
             <CardHeader
-              title="Arrivals"
-              subtitle={`${ops.arrivals.length} expected · ${ops.unassignedArrivals.length} still need a room`} />
+              title="Arrivals & Reservations"
+              subtitle={`${allArrivals.length} total active reservations · ${ops.arrivals.length} due today`} />
             
-            {ops.arrivals.length === 0 ?
-            <EmptyState title="No arrivals today" detail="Nothing is due to check in for this date." /> :
+            {allArrivals.length === 0 ?
+            <EmptyState title="No arrivals or reservations" detail="No active reservations found in the system." /> :
 
             <ul className="divide-y divide-line border-t border-line">
-                {ops.arrivals.map((reservation) => {
+                {allArrivals.map((reservation) => {
                 const room = getRoom(reservation.roomId);
-                const ready =
-                room && (room.housekeeping === 'clean' || room.housekeeping === 'inspected');
+                const isToday = reservation.arrival === today;
                 return (
                   <li
                     key={reservation.id}
                     className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-emerald-50/60">
                     
                       <div className="min-w-[180px] flex-1">
-                        <Link
-                        to={`/reservations/${reservation.id}`}
-                        className="text-[13px] font-semibold text-ink hover:text-brand-700">
-                        
-                          {guestName(reservation.guestId)}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                          to={`/reservations/${reservation.id}`}
+                          className="text-[13px] font-semibold text-ink hover:text-brand-700">
+                          
+                            {guestName(reservation.guestId)}
+                          </Link>
+                          {isToday ? (
+                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                              Today
+                            </span>
+                          ) : (
+                            <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+                              Upcoming
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-[11px] text-ink-muted">
-                          {reservation.code} · {reservation.roomType} · {reservation.adults}A
+                          {reservation.code} · {reservation.roomType} {room ? `(Room ${room.number})` : '(Unassigned)'} · {reservation.adults}A
                           {reservation.children > 0 ? ` ${reservation.children}C` : ''} ·{' '}
                           {shortDate(reservation.arrival)} → {shortDate(reservation.departure)}
                         </p>
