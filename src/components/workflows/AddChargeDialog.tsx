@@ -22,30 +22,32 @@ export function AddChargeDialog({
   open,
   reservationId,
   onClose
-
-
-
-
 }: {open: boolean;reservationId: string | null;onClose: () => void;}) {
   const { addCharge } = useHotel();
   const [code, setCode] = useState<ChargeCode>('Restaurant');
   const [description, setDescription] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [unitPrice, setUnitPrice] = useState(0);
+  const [quantity, setQuantity] = useState<number | string>(1);
+  const [unitPrice, setUnitPrice] = useState<number | string>(0);
   const [error, setError] = useState('');
 
   function post() {
     if (!reservationId) return;
-    if (unitPrice <= 0) {
+    const numPrice = Number(unitPrice);
+    const numQty = Number(quantity);
+    if (unitPrice === '' || isNaN(numPrice) || numPrice <= 0) {
       setError('Enter a unit price greater than zero.');
+      return;
+    }
+    if (quantity === '' || isNaN(numQty) || numQty < 1) {
+      setError('Enter a quantity of at least 1.');
       return;
     }
     addCharge({
       reservationId,
       code,
       description: description.trim() || code,
-      quantity,
-      unitPrice
+      quantity: numQty,
+      unitPrice: numPrice
     });
     setDescription('');
     setQuantity(1);
@@ -53,6 +55,8 @@ export function AddChargeDialog({
     setError('');
     onClose();
   }
+
+  const calcTotal = (Number(quantity) || 0) * (Number(unitPrice) || 0);
 
   return (
     <Modal
@@ -89,7 +93,10 @@ export function AddChargeDialog({
             type="number"
             min={1}
             value={quantity}
-            onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))} />
+            onChange={(event) => {
+              setQuantity(event.target.value);
+              setError('');
+            }} />
           
         </Field>
         <Field label="Unit price">
@@ -97,13 +104,16 @@ export function AddChargeDialog({
             type="number"
             min={0}
             value={unitPrice}
-            onChange={(event) => setUnitPrice(Math.max(0, Number(event.target.value)))} />
+            onChange={(event) => {
+              setUnitPrice(event.target.value);
+              setError('');
+            }} />
           
         </Field>
       </div>
       <p className="mt-4 rounded-lg bg-canvas px-3 py-2.5 text-[12px] text-ink-soft">
         Charge total:{' '}
-        <span className="tabular font-semibold text-ink">{money(quantity * unitPrice)}</span>
+        <span className="tabular font-semibold text-ink">{money(calcTotal)}</span>
       </p>
       {error ?
       <p role="alert" className="mt-3 rounded-lg bg-[#fdeceb] px-3 py-2 text-[12px] font-semibold text-[#b3312a]">

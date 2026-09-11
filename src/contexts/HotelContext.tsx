@@ -76,14 +76,17 @@ export interface NewRoomInput {
 
 export interface NewTicketInput {
   roomId: string;
+  title?: string;
   category: 'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   description: string;
+  blocksSale?: boolean;
 }
 
 export interface NewStaffInput {
   name: string;
   role: string;
+  department?: Department;
   shift: string;
   email: string;
   phone: string;
@@ -207,8 +210,11 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     [guests]
   );
   const folio = useCallback(
-    (reservationId: string) => folioFor(reservationId, charges, payments),
-    [charges, payments]
+    (reservationId: string) => {
+      const res = reservations.find((r) => r.id === reservationId);
+      return folioFor(reservationId, charges, payments, res);
+    },
+    [charges, payments, reservations]
   );
   const roomStatus = useCallback(
     (roomId: string) => ops.statusByRoom[roomId] ?? 'available',
@@ -358,13 +364,25 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
   const createReservation = useCallback(
     (input: NewReservationInput) => {
       const reservation = buildReservation(input, false);
+      const nights = Math.max(1, nightsBetween(input.arrival, input.departure));
+      const roomCharge: Charge = {
+        id: nextId('chg'),
+        reservationId: reservation.id,
+        code: 'Room',
+        description: `Room charge — ${nights} night(s) (${reservation.roomType})`,
+        quantity: nights,
+        unitPrice: input.rate,
+        date: today,
+        postedBy: currentUser.name
+      };
       setReservations((prev) => [reservation, ...prev]);
+      setCharges((prev) => [...prev, roomCharge]);
       toast.success(`Reservation ${reservation.code} confirmed`, {
         description: `${guestName(input.guestId)} · ${input.arrival} → ${input.departure}`
       });
       return reservation;
     },
-    [buildReservation, guestName]
+    [buildReservation, currentUser.name, guestName, nextId, today]
   );
 
   const createWalkIn = useCallback(
@@ -677,34 +695,52 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
 
   const addTicket = useCallback(
     (input: NewTicketInput) => {
+      const targetRoom = rooms.find((r) => r.id === input.roomId);
+      const title = input.title || `${input.category} Issue — ${targetRoom ? `Room ${targetRoom.number}` : 'Room'}`;
       const newTicket: MaintenanceTicket = {
         id: nextId('MT'),
-        code: `TCK-${Math.floor(1000 + Math.random() * 9000)}`,
+        code: `WO-${Math.floor(1000 + Math.random() * 9000)}`,
         roomId: input.roomId,
-        category: input.category,
+        title,
+        description: input.description,
         priority: input.priority,
         status: 'open',
-        description: input.description,
-        reportedAt: stamp(),
-        assignedTo: 'Unassigned'
+        blocksSale: input.blocksSale ?? (input.priority === 'urgent' || input.priority === 'high'),
+        assignee: null,
+        reportedBy: currentUser.name || 'Staff',
+        createdAt: today
       };
       setTickets((prev) => [newTicket, ...prev]);
       toast.success(`Maintenance ticket ${newTicket.code} created`);
       return newTicket;
     },
-    [nextId, stamp]
+    [currentUser.name, nextId, rooms, today]
   );
 
   const addStaffMember = useCallback(
     (input: NewStaffInput) => {
+      const dept: Department = input.department || (
+        input.role.toLowerCase().includes('housekeep') || input.role.toLowerCase().includes('clean') || input.role.toLowerCase().includes('laundry')
+          ? 'Housekeeping'
+          : input.role.toLowerCase().includes('front') || input.role.toLowerCase().includes('desk') || input.role.toLowerCase().includes('concierge')
+          ? 'Front Office'
+          : input.role.toLowerCase().includes('mainten') || input.role.toLowerCase().includes('engineer') || input.role.toLowerCase().includes('tech')
+          ? 'Maintenance'
+          : input.role.toLowerCase().includes('f&b') || input.role.toLowerCase().includes('food') || input.role.toLowerCase().includes('restaurant')
+          ? 'F&B'
+          : 'Management'
+      );
+
       const member: StaffMember = {
         id: nextId('STF'),
-        name: input.name,
+        name: input.name.trim(),
         role: input.role,
+        department: dept,
         shift: input.shift,
-        email: input.email,
-        phone: input.phone,
-        status: 'On Duty'
+        email: input.email.trim(),
+        phone: input.phone.trim(),
+        status: 'On Duty',
+        workload: 0
       };
       setStaff((prev) => [member, ...prev]);
       toast.success(`Staff member ${member.name} added`);

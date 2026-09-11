@@ -30,10 +30,17 @@ import { shortDate } from '../utils/format';
 const FLOW: TicketStatus[] = ['open', 'in-progress', 'awaiting-parts', 'resolved'];
 
 export function Maintenance() {
-  const { tickets, rooms, getRoom, updateTicket, addTicket, ops } = useHotel();
+  const { tickets, rooms, getRoom, updateTicket, addTicket, ops, staff } = useHotel();
   const [status, setStatus] = useState<'all' | TicketStatus>('all');
   const [priority, setPriority] = useState<'all' | TicketPriority>('all');
   const [selectedId, setSelectedId] = useState<string | null>(tickets[0]?.id ?? null);
+
+  const technicianOptions = useMemo(() => {
+    const fromStaff = staff
+      .filter((s) => s.department === 'Maintenance' || s.role.toLowerCase().includes('mainten') || s.role.toLowerCase().includes('tech') || s.role.toLowerCase().includes('engineer'))
+      .map((s) => s.name);
+    return Array.from(new Set([...TECHNICIANS, ...fromStaff]));
+  }, [staff]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newRoomId, setNewRoomId] = useState(rooms[0]?.id ?? '');
@@ -44,11 +51,16 @@ export function Maintenance() {
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDesc.trim()) return;
+    const targetRoomId = newRoomId || rooms[0]?.id;
+    if (!targetRoomId) return;
+    const targetRoom = getRoom(targetRoomId);
     const created = addTicket({
-      roomId: newRoomId,
+      roomId: targetRoomId,
+      title: `${newCategory} Issue — ${targetRoom ? `Room ${targetRoom.number}` : 'Room'}`,
       category: newCategory,
       priority: newPriority,
-      description: newDesc
+      description: newDesc.trim(),
+      blocksSale: newPriority === 'urgent' || newPriority === 'high'
     });
     setSelectedId(created.id);
     setCreateOpen(false);
@@ -223,11 +235,11 @@ export function Maintenance() {
                     }>
                     
                       <option value="">Unassigned</option>
-                      {TECHNICIANS.map((name) =>
-                    <option key={name} value={name}>
+                      {technicianOptions.map((name) => (
+                        <option key={name} value={name}>
                           {name}
                         </option>
-                    )}
+                      ))}
                     </SelectInput>
                   </label>
 

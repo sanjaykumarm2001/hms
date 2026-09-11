@@ -19,11 +19,11 @@ export function AddRoomDialog({
 }) {
   const { rooms, createRoom } = useHotel();
   const [number, setNumber] = useState('');
-  const [floor, setFloor] = useState<number>(1);
+  const [floor, setFloor] = useState<number | string>(1);
   const [type, setType] = useState<RoomTypeName>('Standard');
   const [beds, setBeds] = useState('2 Queen');
-  const [maxOccupancy, setMaxOccupancy] = useState<number>(2);
-  const [rate, setRate] = useState<number>(150);
+  const [maxOccupancy, setMaxOccupancy] = useState<number | string>(2);
+  const [rate, setRate] = useState<number | string>(150);
   const [view, setView] = useState('City View');
   const [housekeeping, setHousekeeping] = useState<HousekeepingStatus>('clean');
   const [error, setError] = useState('');
@@ -62,28 +62,40 @@ export function AddRoomDialog({
       setError(`Room number ${trimmedNum} already exists.`);
       return;
     }
-    if (!floor || floor < 1) {
+    const numFloor = Number(floor);
+    if (floor === '' || isNaN(numFloor) || numFloor < 1) {
       setError('Please specify a valid floor number.');
       return;
     }
-    if (!rate || rate <= 0) {
+    const numRate = Number(rate);
+    if (rate === '' || isNaN(numRate) || numRate <= 0) {
       setError('Please enter a valid nightly rate.');
+      return;
+    }
+    const numOccupancy = Number(maxOccupancy);
+    if (maxOccupancy === '' || isNaN(numOccupancy) || numOccupancy < 1) {
+      setError('Please enter a valid max occupancy (at least 1 guest).');
       return;
     }
 
     const created = createRoom({
       number: trimmedNum,
-      floor,
+      floor: numFloor,
       type,
       beds,
-      maxOccupancy,
-      rate,
+      maxOccupancy: numOccupancy,
+      rate: numRate,
       view,
       housekeeping
     });
 
     // Reset form state
     setNumber('');
+    setFloor(1);
+    setType('Standard');
+    setBeds('2 Queen');
+    setMaxOccupancy(2);
+    setRate(150);
     setError('');
     onClose();
     if (onRoomCreated) {
@@ -123,13 +135,16 @@ export function AddRoomDialog({
               type="number"
               min={1}
               value={floor}
-              onChange={(e) => setFloor(Math.max(1, Number(e.target.value)))}
+              onChange={(e) => {
+                setFloor(e.target.value);
+                setError('');
+              }}
               placeholder="1"
               className="w-full"
             />
             {existingFloors.length > 0 && (
               <SelectInput
-                value={existingFloors.includes(floor) ? floor : ''}
+                value={floor !== '' && existingFloors.includes(Number(floor)) ? Number(floor) : ''}
                 onChange={(e) => e.target.value && setFloor(Number(e.target.value))}
                 className="!w-auto shrink-0"
                 title="Select from existing floor"
@@ -170,7 +185,10 @@ export function AddRoomDialog({
             type="number"
             min={0}
             value={rate}
-            onChange={(e) => setRate(Math.max(0, Number(e.target.value)))}
+            onChange={(e) => {
+              setRate(e.target.value);
+              setError('');
+            }}
             placeholder="150"
           />
         </Field>
@@ -181,7 +199,10 @@ export function AddRoomDialog({
             min={1}
             max={10}
             value={maxOccupancy}
-            onChange={(e) => setMaxOccupancy(Math.max(1, Number(e.target.value)))}
+            onChange={(e) => {
+              setMaxOccupancy(e.target.value);
+              setError('');
+            }}
           />
         </Field>
 

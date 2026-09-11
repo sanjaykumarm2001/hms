@@ -31,10 +31,17 @@ function nextAction(status: HousekeepingStatus): { label: string; next: Housekee
 }
 
 export function Housekeeping() {
-  const { rooms, ops, setHousekeeping, assignHousekeeper, setHousekeepingPriority, reservations, guestName } =
+  const { rooms, ops, setHousekeeping, assignHousekeeper, setHousekeepingPriority, reservations, guestName, staff } =
   useHotel();
   const [filter, setFilter] = useState<Filter>('dirty');
   const [priority, setPriority] = useState<'all' | HousekeepingPriority>('all');
+
+  const housekeeperOptions = useMemo(() => {
+    const fromStaff = staff
+      .filter((s) => s.department === 'Housekeeping' || s.role.toLowerCase().includes('housekeep') || s.role.toLowerCase().includes('clean'))
+      .map((s) => s.name);
+    return Array.from(new Set([...HOUSEKEEPERS, ...fromStaff]));
+  }, [staff]);
 
   const list = useMemo(
     () =>
@@ -148,11 +155,11 @@ export function Housekeeping() {
                   aria-label={`Assign housekeeper for room ${room.number}`}>
                   
                     <option value="">Unassigned</option>
-                    {HOUSEKEEPERS.map((name) =>
-                  <option key={name} value={name}>
+                    {housekeeperOptions.map((name) => (
+                      <option key={name} value={name}>
                         {name}
                       </option>
-                  )}
+                    ))}
                   </SelectInput>
                   <SelectInput
                   value={room.housekeepingPriority}

@@ -1,4 +1,5 @@
 import { parseISO } from 'date-fns';
+import { nightsBetween } from './format';
 import type {
   Charge,
   Folio,
@@ -23,15 +24,9 @@ export interface RoomCounts {
   total: number;
   available: number;
   occupied: number;
-  reserved: number;
   maintenance: number;
   outOfService: number;
-  dirty: number;
-  cleaning: number;
-  clean: number;
-  inspected: number;
-  ready: number;
-  sellable: number;
+  occupancyRate: number;
 }
 
 export interface Operations {
@@ -52,6 +47,21 @@ export interface Operations {
   statusByRoom: Record<string, RoomFrontOfficeStatus>;
 }
 
+export interface OperationalSummary extends OperationsInput {
+  counts: RoomCounts;
+  arrivals: Reservation[];
+  departures: Reservation[];
+  inHouse: Reservation[];
+  stayovers: Reservation[];
+  unassigned: Reservation[];
+  dirtyRooms: Room[];
+  urgentTickets: MaintenanceTicket[];
+  outstanding: Reservation[];
+  outstandingTotal: number;
+  alerts: OperationalAlert[];
+  statusByRoom: Record<string, RoomFrontOfficeStatus>;
+}
+
 const ACTIVE_TICKETS: MaintenanceTicket['status'][] = ['open', 'in-progress', 'awaiting-parts'];
 
 export function isTicketActive(ticket: MaintenanceTicket): boolean {
@@ -59,13 +69,20 @@ export function isTicketActive(ticket: MaintenanceTicket): boolean {
 }
 
 export function folioFor(
-reservationId: string,
-charges: Charge[],
-payments: Payment[])
-: Folio {
+  reservationId: string,
+  charges: Charge[],
+  payments: Payment[],
+  reservation?: Reservation
+): Folio {
   const folioCharges = charges.filter((c) => c.reservationId === reservationId);
   const folioPayments = payments.filter((p) => p.reservationId === reservationId);
-  const chargeTotal = folioCharges.reduce((sum, c) => sum + c.quantity * c.unitPrice, 0);
+  let chargeTotal = folioCharges.reduce((sum, c) => sum + c.quantity * c.unitPrice, 0);
+
+  if (folioCharges.length === 0 && reservation) {
+    const nights = Math.max(1, nightsBetween(reservation.arrival, reservation.departure));
+    chargeTotal = Math.round(nights * (reservation.rate || 0) * 100) / 100;
+  }
+
   const paidTotal = folioPayments.reduce(
     (sum, p) => sum + (p.kind === 'Refund' ? -p.amount : p.amount),
     0

@@ -18,12 +18,20 @@ import type { Department } from '../types/hotel';
 
 const DEPARTMENTS: Department[] = ['Front Office', 'Housekeeping', 'Maintenance', 'F&B', 'Management'];
 
+const STAFF_ROLES: { label: string; department: Department }[] = [
+  { label: 'Housekeeping', department: 'Housekeeping' },
+  { label: 'Front Office', department: 'Front Office' },
+  { label: 'Maintenance', department: 'Maintenance' },
+  { label: 'F&B', department: 'F&B' },
+  { label: 'General Manager', department: 'Management' }
+];
+
 export function Staff() {
   const { staff, rooms, tickets, addStaffMember } = useHotel();
   const [department, setDepartment] = useState<'all' | Department>('all');
   const [addOpen, setAddOpen] = useState(false);
   const [name, setName] = useState('');
-  const [role, setRole] = useState('Front Desk Agent');
+  const [role, setRole] = useState(STAFF_ROLES[0].label);
   const [shift, setShift] = useState('Morning (07:00 - 15:30)');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -31,7 +39,9 @@ export function Staff() {
   const handleAddStaff = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addStaffMember({ name, role, shift, email, phone });
+    const selectedRoleObj = STAFF_ROLES.find((r) => r.label === role);
+    const dept = selectedRoleObj?.department ?? 'Housekeeping';
+    addStaffMember({ name: name.trim(), role, department: dept, shift, email, phone });
     setAddOpen(false);
     setName('');
     setEmail('');
@@ -186,12 +196,13 @@ export function Staff() {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Role">
-              <TextInput
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="Front Desk Agent"
-                required
-              />
+              <SelectInput value={role} onChange={(e) => setRole(e.target.value)}>
+                {STAFF_ROLES.map((r) => (
+                  <option key={r.label} value={r.label}>
+                    {r.label}
+                  </option>
+                ))}
+              </SelectInput>
             </Field>
 
             <Field label="Shift">
