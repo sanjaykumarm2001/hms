@@ -63,6 +63,17 @@ export interface CheckInInput {
   includeInReport?: boolean;
 }
 
+export interface NewRoomInput {
+  number: string;
+  floor: number;
+  type: RoomTypeName;
+  beds?: string;
+  maxOccupancy?: number;
+  rate?: number;
+  view?: string;
+  housekeeping?: HousekeepingStatus;
+}
+
 export interface NewTicketInput {
   roomId: string;
   category: 'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other';
@@ -98,6 +109,7 @@ interface HotelContextValue {
   roomStatus: (roomId: string) => RoomFrontOfficeStatus;
   createGuest: (input: NewGuestInput) => Guest;
   updateGuest: (id: string, patch: Partial<Guest>) => void;
+  createRoom: (input: NewRoomInput) => Room;
   createReservation: (input: NewReservationInput) => Reservation;
   createWalkIn: (input: NewReservationInput) => Reservation;
   assignRoom: (reservationId: string, roomId: string) => void;
@@ -264,6 +276,29 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
 
   const updateGuest = useCallback((id: string, patch: Partial<Guest>) => {
     setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+  }, []);
+
+  const createRoom = useCallback((input: NewRoomInput): Room => {
+    const newRoom: Room = {
+      id: `rm-${Date.now()}`,
+      number: input.number.trim(),
+      floor: Number(input.floor),
+      type: input.type,
+      beds: input.beds?.trim() || (input.type === 'Suite' || input.type === 'Executive' ? '1 King' : '2 Queen'),
+      maxOccupancy: Number(input.maxOccupancy) || (input.type === 'Suite' ? 4 : 2),
+      rate: Number(input.rate) || (input.type === 'Suite' ? 280 : input.type === 'Executive' ? 220 : input.type === 'Deluxe' ? 180 : 140),
+      view: input.view?.trim() || 'City View',
+      outOfService: false,
+      housekeeping: input.housekeeping || 'clean',
+      housekeepingPriority: 'normal',
+      housekeeper: null
+    };
+
+    setRooms((prev) => [...prev, newRoom]);
+    toast.success(`Room ${newRoom.number} added`, {
+      description: `${newRoom.type} room created on Floor ${newRoom.floor}.`
+    });
+    return newRoom;
   }, []);
 
   const buildReservation = useCallback(
@@ -721,6 +756,7 @@ export function HotelProvider({ children }: {children: React.ReactNode;}) {
     roomStatus,
     createGuest,
     updateGuest,
+    createRoom,
     createReservation,
     createWalkIn,
     assignRoom,

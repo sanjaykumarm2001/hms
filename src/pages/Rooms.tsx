@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { BedDoubleIcon, WrenchIcon } from 'lucide-react';
+import { BedDoubleIcon, PlusIcon, WrenchIcon } from 'lucide-react';
 import {
   Card,
   KeyValue,
   PageHeader,
+  PrimaryButton,
   SearchInput,
   SecondaryButton,
   SelectInput,
   StatusPill
 } from '../components/ui';
 import { useHotel } from '../contexts/HotelContext';
+import { AddRoomDialog } from '../components/workflows/AddRoomDialog';
 import type { HousekeepingStatus, Room, RoomFrontOfficeStatus } from '../types/hotel';
 import {
   housekeepingLabel,
@@ -43,6 +45,7 @@ export function Rooms() {
   const [floor, setFloor] = useState<'all' | number>('all');
   const [status, setStatus] = useState<'all' | RoomFrontOfficeStatus>('all');
   const [hk, setHk] = useState<'all' | HousekeepingStatus>('all');
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const number = searchParams.get('room');
     return number ? rooms.find((room) => room.number === number)?.id ?? null : null;
@@ -93,6 +96,12 @@ export function Rooms() {
         subtitle={`${ops.counts.total} rooms · ${ops.counts.available} available · ${ops.counts.occupied} occupied · ${
           ops.counts.maintenance + ops.counts.outOfService
         } blocked`}
+        actions={
+          <PrimaryButton gradient onClick={() => setAddRoomOpen(true)}>
+            <PlusIcon aria-hidden="true" className="h-4 w-4" />
+            Add Room
+          </PrimaryButton>
+        }
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -367,26 +376,34 @@ export function Rooms() {
               }
               </Card>
 
-              {selectedTickets.length ?
-            <Card className="p-5">
+              {selectedTickets.length ? (
+                <Card className="p-5">
                   <h2 className="text-[15px] font-semibold tracking-tight text-ink">Open work orders</h2>
                   <ul className="mt-3 space-y-2">
-                    {selectedTickets.map((ticket) =>
-                <li key={ticket.id} className="rounded-lg border border-line px-3 py-2.5">
+                    {selectedTickets.map((ticket) => (
+                      <li key={ticket.id} className="rounded-lg border border-line px-3 py-2.5">
                         <p className="text-[12px] font-semibold text-ink">{ticket.title}</p>
                         <p className="mt-0.5 text-[11px] text-ink-muted">
                           {ticket.code} · {ticket.priority}
                           {ticket.blocksSale ? ' · blocks sale' : ''}
                         </p>
                       </li>
-                )}
+                    ))}
                   </ul>
-                </Card> :
-            null}
-            </> :
-          null}
+                </Card>
+              ) : null}
+            </> : null}
         </div>
       </div>
-    </div>);
 
+      <AddRoomDialog
+        open={addRoomOpen}
+        onClose={() => setAddRoomOpen(false)}
+        onRoomCreated={(id, fl) => {
+          setSelectedId(id);
+          setFloor(fl);
+        }}
+      />
+    </div>
+  );
 }
