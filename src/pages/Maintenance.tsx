@@ -45,7 +45,7 @@ export function Maintenance() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newRoomId, setNewRoomId] = useState(rooms[0]?.id ?? '');
   const [newCategory, setNewCategory] = useState<'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other'>('HVAC');
-  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [newPriority, setNewPriority] = useState<TicketPriority>('normal');
   const [newDesc, setNewDesc] = useState('');
 
   const handleCreateTicket = (e: React.FormEvent) => {
@@ -89,19 +89,102 @@ export function Maintenance() {
   const blocking = tickets.filter((ticket) => ticket.blocksSale && ticket.status !== 'resolved');
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Operations"
-        title="Maintenance"
-        subtitle={`${blocking.length} out-of-service rooms · ${tickets.filter((t) => t.status === 'open').length} open tickets`}
-        actions={
-          <PrimaryButton gradient onClick={() => setCreateOpen(true)}>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Work Orders & Maintenance
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE WORK ORDER SYSTEM
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            {blocking.length} out-of-service rooms · {tickets.filter((t) => t.status === 'open').length} open tickets
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <PrimaryButton onClick={() => setCreateOpen(true)}>
             <PlusIcon aria-hidden="true" className="h-4 w-4" />
             New ticket
           </PrimaryButton>
-        }
-      />
-      
+        </div>
+      </div>
+
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL TICKETS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <WrenchIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {tickets.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">All Time</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              OPEN TICKETS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-800 shadow-xs">
+              <WrenchIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {tickets.filter((t) => t.status === 'open').length}
+            </span>
+            <span className="text-xs font-semibold text-blue-700">Active</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              BLOCKING ROOMS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-red-800 shadow-xs">
+              <AlertTriangleIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {blocking.length}
+            </span>
+            <span className="text-xs font-semibold text-red-600">Out of Service</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              RESOLVED
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <WrenchIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {tickets.filter((t) => t.status === 'resolved').length}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Completed</span>
+          </div>
+        </div>
+      </div>
 
       {blocking.some((ticket) => ticket.priority === 'urgent') ?
       <div className="mb-5 flex items-start gap-3 rounded-card border border-[#f3ceca] bg-[#fdeceb] px-4 py-3">
@@ -139,7 +222,7 @@ export function Maintenance() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <Card className="overflow-hidden">
+        <Card className="glass-card-premium p-0 border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
           <CardHeader title="Work orders" subtitle={`${list.length} in this view`} />
           {list.length === 0 ?
           <EmptyState title="No work orders" detail="Nothing matches the current filters." /> :
@@ -336,7 +419,7 @@ export function Maintenance() {
                 onChange={(e) => setNewPriority(e.target.value as any)}
               >
                 <option value="low">Low</option>
-                <option value="medium">Medium</option>
+                <option value="normal">Normal</option>
                 <option value="high">High</option>
                 <option value="urgent">Urgent</option>
               </SelectInput>

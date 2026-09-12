@@ -197,20 +197,34 @@ export function Reports() {
   }
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Insights"
-        title="Reports"
-        subtitle="Generated live from the operational state — rooms, reservations, folios and payments."
-        actions={
-        <SecondaryButton onClick={exportCsv} disabled={table.rows.length === 0}>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Reports & Analytics
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE REPORTING ENGINE
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            Generated live from the operational state — rooms, reservations, folios and payments.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <PrimaryButton onClick={exportCsv} disabled={table.rows.length === 0}>
             <DownloadIcon aria-hidden="true" className="h-4 w-4" />
             Export CSV
-          </SecondaryButton>
-        } />
+          </PrimaryButton>
+        </div>
+      </div>
       
 
-      <Card className="mb-5 p-5">
+      <Card className="mb-5 p-5 glass-card-premium border border-slate-200/80 shadow-sm rounded-2xl">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_180px_180px_auto]">
           <Field label="Report">
             <SelectInput
@@ -242,7 +256,7 @@ export function Reports() {
         </p>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="glass-card-premium p-0 border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
         <CardHeader
           title={`${meta?.label} report`}
           subtitle={`${table.rows.length} rows · ${shortDate(from)} → ${shortDate(to)}`} />

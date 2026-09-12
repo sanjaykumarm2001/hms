@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDaysIcon, DoorOpenIcon, PlusIcon } from 'lucide-react';
+import { CalendarDaysIcon, DoorOpenIcon, LogOutIcon, PlusIcon, UsersIcon } from 'lucide-react';
 import { AvailabilityView } from '../components/reservations/AvailabilityView';
 import { CalendarView } from '../components/reservations/CalendarView';
 import {
@@ -65,24 +65,106 @@ export function Reservations() {
   }, [reservations]);
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Operations"
-        title="Reservations"
-        subtitle={`${reservations.length} reservations in the system · ${ops.arrivals.length} arriving today`}
-        actions={
-          <div className="flex items-center gap-2">
-            <SecondaryButton onClick={() => { setBookingMode('walk-in'); setDialogOpen(true); }}>
-              <DoorOpenIcon aria-hidden="true" className="h-4 w-4 text-brand-700" />
-              Walk-in
-            </SecondaryButton>
-            <PrimaryButton gradient onClick={() => { setBookingMode('reservation'); setDialogOpen(true); }}>
-              <PlusIcon aria-hidden="true" className="h-4 w-4" />
-              New reservation
-            </PrimaryButton>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Reservations & Bookings
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE RESERVATIONS DESK
+            </span>
           </div>
-        } />
-      
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            {reservations.length} total reservations · {ops.arrivals.length} arriving today · {ops.inHouse.length} in-house
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <SecondaryButton onClick={() => { setBookingMode('walk-in'); setDialogOpen(true); }}>
+            <DoorOpenIcon aria-hidden="true" className="h-4 w-4" />
+            Walk-in Check-in
+          </SecondaryButton>
+          <PrimaryButton gradient onClick={() => { setBookingMode('reservation'); setDialogOpen(true); }}>
+            <PlusIcon aria-hidden="true" className="h-4 w-4" />
+            New reservation
+          </PrimaryButton>
+        </div>
+      </div>
+
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL BOOKINGS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <CalendarDaysIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {reservations.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">All Reservations</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              ARRIVING TODAY
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <DoorOpenIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.arrivals.length}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Expected Arrivals</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              IN-HOUSE GUESTS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0f2fe] text-[#0284c7] shadow-xs">
+              <UsersIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.inHouse.length}
+            </span>
+            <span className="text-xs font-semibold text-[#0284c7]">Currently Checked-in</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              DEPARTURES TODAY
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fef3c7] text-[#b45309] shadow-xs">
+              <LogOutIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.departures.length}
+            </span>
+            <span className="text-xs font-semibold text-[#b45309]">Checking Out</span>
+          </div>
+        </div>
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs
@@ -133,7 +215,7 @@ export function Reservations() {
       </div>
 
       {view === 'list' ?
-      <Card className="overflow-hidden">
+      <Card className="glass-card-premium p-0 border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
           {rows.length === 0 ?
         <EmptyState
           title="No reservations match"
@@ -143,17 +225,17 @@ export function Reservations() {
         <div className="overflow-x-auto">
               <table className="w-full min-w-[880px] text-left">
                 <thead>
-                  <tr className="bg-[#fafbf8] text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                    <th scope="col" className="py-2.5 pl-5 pr-3 font-semibold">Guest</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Reservation</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Stay</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Room</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Status</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Folio</th>
-                    <th scope="col" className="px-3 py-2.5 pr-5 text-right font-semibold">Balance</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    <th scope="col" className="py-3 pl-5 pr-3 font-semibold">Guest</th>
+                    <th scope="col" className="px-3 py-3 font-semibold">Code</th>
+                    <th scope="col" className="px-3 py-3 font-semibold">Stay Period</th>
+                    <th scope="col" className="px-3 py-3 font-semibold">Room</th>
+                    <th scope="col" className="px-3 py-3 font-semibold">Status</th>
+                    <th scope="col" className="px-3 py-3 font-semibold">Payment</th>
+                    <th scope="col" className="px-3 py-3 pr-5 text-right font-semibold">Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-slate-100">
                   {rows.map((reservation) => {
                 const room = getRoom(reservation.roomId);
                 const f = folio(reservation.id);
@@ -161,38 +243,48 @@ export function Reservations() {
                   <tr
                     key={reservation.id}
                     onClick={() => navigate(`/reservations/${reservation.id}`)}
-                    className="cursor-pointer transition-colors duration-150 hover:bg-emerald-50/60">
+                    className="cursor-pointer transition-colors duration-150 hover:bg-emerald-50/50">
                     
-                        <td className="py-3 pl-5 pr-3">
-                          <p className="text-[13px] font-semibold text-ink">
+                        <td className="py-3.5 pl-5 pr-3">
+                          <p className="text-xs font-bold text-slate-900">
                             {guestName(reservation.guestId)}
                           </p>
-                          <p className="text-[11px] text-ink-muted">{reservation.source}</p>
+                          <p className="text-[11px] text-slate-500">{reservation.source}</p>
                         </td>
-                        <td className="tabular px-3 py-3 text-[12px] font-semibold text-ink-soft">
-                          {reservation.code}
-                        </td>
-                        <td className="tabular px-3 py-3 text-[12px] text-ink-soft">
-                          {shortDate(reservation.arrival)} → {shortDate(reservation.departure)}
-                          <span className="block text-[11px] text-ink-muted">
-                            {nightsBetween(reservation.arrival, reservation.departure)} night(s) ·{' '}
-                            {reservation.roomType}
+                        <td className="px-3 py-3.5">
+                          <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                            {reservation.code}
                           </span>
                         </td>
-                        <td className="tabular px-3 py-3 text-[13px] font-semibold text-ink">
-                          {room?.number ?? <span className="text-ink-muted">—</span>}
+                        <td className="px-3 py-3.5">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                            <CalendarDaysIcon className="h-3.5 w-3.5 text-[#176938]" />
+                            {shortDate(reservation.arrival)} → {shortDate(reservation.departure)}
+                            <span className="text-slate-400 font-normal">
+                              ({nightsBetween(reservation.arrival, reservation.departure)}N · {reservation.roomType})
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-3 py-3.5 text-xs font-bold text-slate-900">
+                          {room?.number ? (
+                            <span className="bg-emerald-50 text-[#176938] px-2 py-0.5 rounded border border-emerald-200">
+                              Rm {room.number}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3.5">
                           <StatusPill tone={reservationTone[reservation.status]}>
                             {reservationLabel[reservation.status]}
                           </StatusPill>
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-3 py-3.5">
                           <StatusPill tone={paymentTone[reservation.paymentStatus]} dot={false}>
                             {paymentLabel[reservation.paymentStatus]}
                           </StatusPill>
                         </td>
-                        <td className="tabular px-3 py-3 pr-5 text-right text-[13px] font-semibold text-ink">
+                        <td className="px-3 py-3.5 pr-5 text-right text-xs font-bold text-slate-900">
                           {money(f.balance)}
                         </td>
                       </tr>);
@@ -210,7 +302,7 @@ export function Reservations() {
 
       <NewReservationDialog
         open={dialogOpen}
-        mode="reservation"
+        mode={bookingMode}
         onClose={() => setDialogOpen(false)}
         onCreated={(id) => navigate(`/reservations/${id}`)} />
       

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   BedDoubleIcon,
+  CheckCircle2Icon,
   KeyIcon,
   PlusIcon,
   QrCodeIcon,
@@ -46,13 +47,13 @@ export function CheckInDialog({
   const [regulatoryReport, setRegulatoryReport] = useState<'standard' | 'form-c'>('standard');
   const [accompanying, setAccompanying] = useState<string[]>([]);
   const [accompanyingDraft, setAccompanyingDraft] = useState('');
-  const [includeInReport, setIncludeInReport] = useState(true);
 
   // Room Assignment State
   const [roomId, setRoomId] = useState<string>('');
   const [matchRoomType, setMatchRoomType] = useState(true);
 
   // Payment & Deposit State
+  const [collectAdvance, setCollectAdvance] = useState(true);
   const [keyCards] = useState(2);
   const [deposit, setDeposit] = useState(0);
   const [paymentCategory, setPaymentCategory] = useState<'Card' | 'Cash' | 'Digital'>('Card');
@@ -69,10 +70,7 @@ export function CheckInDialog({
       setIdType(guest.idType || 'Passport');
       setIdNumber(guest.idNumber || '');
     }
-    if (reservation && open) {
-      setIncludeInReport(reservation.includeInReport ?? true);
-    }
-  }, [guest, reservation, open]);
+  }, [guest, open]);
 
   const activeRoomId = roomId || reservation?.roomId || '';
   const room = rooms.find((r) => r.id === activeRoomId);
@@ -130,8 +128,7 @@ export function CheckInDialog({
       depositAmount: deposit,
       method,
       idVerified: Boolean(idNumber.trim() || guest.idNumber),
-      registrationSigned: true,
-      includeInReport
+      registrationSigned: true
     });
 
     setError('');
@@ -361,21 +358,6 @@ export function CheckInDialog({
               </div>
             )}
           </div>
-
-          <div className="pt-3 border-t border-gray-100">
-            <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-bold text-gray-800">
-              <input
-                type="checkbox"
-                checked={includeInReport}
-                onChange={(e) => setIncludeInReport(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
-              />
-              Include in report
-            </label>
-            <p className="mt-0.5 ml-6 text-[11px] text-gray-500">
-              When checked (default), this reservation appears in financial reports & billing screens. Uncheck to hide it from report/billing views.
-            </p>
-          </div>
         </div>
 
         {/* Advance Payment Card */}
@@ -392,6 +374,24 @@ export function CheckInDialog({
               </span>
             )}
           </div>
+
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50/70 p-3 text-[13px] font-semibold text-gray-800 transition-all hover:bg-gray-100/80">
+            <input
+              type="checkbox"
+              checked={collectAdvance}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setCollectAdvance(checked);
+                if (!checked) {
+                  setDeposit(0);
+                } else {
+                  setDeposit(balance > 0 ? balance : 0);
+                }
+              }}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+            />
+            <span>Collect advance payment / deposit at check-in</span>
+          </label>
 
           <div className="space-y-2 text-[13px]">
             <div className="flex justify-between text-gray-600">
@@ -410,38 +410,40 @@ export function CheckInDialog({
             </div>
           </div>
 
-          <div className="pt-2 space-y-3">
-            <Field label="Deposit to collect now">
-              <TextInput
-                type="number"
-                min={0}
-                value={deposit}
-                onChange={(e) => setDeposit(Math.max(0, Number(e.target.value)))}
-                className="h-10"
-              />
-            </Field>
+          {collectAdvance && (
+            <div className="pt-2 space-y-3">
+              <Field label="Deposit to collect now">
+                <TextInput
+                  type="number"
+                  min={0}
+                  value={deposit}
+                  onChange={(e) => setDeposit(Math.max(0, Number(e.target.value)))}
+                  className="h-10"
+                />
+              </Field>
 
-            <div className="grid grid-cols-3 gap-2">
-              {(['Card', 'Cash', 'Digital'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => {
-                    setPaymentCategory(cat);
-                    setMethod(cat === 'Card' ? 'Visa' : cat === 'Cash' ? 'Cash' : 'Bank Transfer');
-                  }}
-                  className={`rounded-xl border py-2.5 text-[13px] font-semibold transition-all ${
-                    paymentCategory === cat
-                      ? 'border-brand-500 bg-blue-50/50 text-brand-700 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              <div className="grid grid-cols-3 gap-2">
+                {(['Card', 'Cash', 'Digital'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      setPaymentCategory(cat);
+                      setMethod(cat === 'Card' ? 'Visa' : cat === 'Cash' ? 'Cash' : 'Bank Transfer');
+                    }}
+                    className={`rounded-xl border py-2.5 text-[13px] font-semibold transition-all ${
+                      paymentCategory === cat
+                        ? 'border-brand-500 bg-blue-50/50 text-brand-700 shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400">Settlement method: {method}</p>
             </div>
-            <p className="text-[11px] text-gray-400">Settlement method: {method}</p>
-          </div>
+          )}
         </div>
 
         {/* Room Assignment Card */}

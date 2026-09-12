@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { UserPlusIcon } from 'lucide-react';
+import { BriefcaseIcon, ClockIcon, UserPlusIcon, UsersIcon } from 'lucide-react';
 import {
   Card,
   CardHeader,
@@ -61,38 +61,120 @@ export function Staff() {
   }, [department, rooms, staff, tickets]);
 
   const onDuty = staff.filter((member) => member.status === 'On Duty').length;
+  const offDuty = staff.filter((member) => member.status !== 'On Duty').length;
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Team"
-        title="Staff"
-        subtitle={`${staff.length} team members · ${onDuty} on duty right now`}
-        actions={
-          <div className="flex items-center gap-2.5">
-            <SelectInput
-              value={department}
-              onChange={(event) => setDepartment(event.target.value as 'all' | Department)}
-              className="w-[170px]"
-              aria-label="Filter by department"
-            >
-              <option value="all">All departments</option>
-              {DEPARTMENTS.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </SelectInput>
-            <PrimaryButton gradient onClick={() => setAddOpen(true)}>
-              <UserPlusIcon aria-hidden="true" className="h-4 w-4" />
-              Add staff
-            </PrimaryButton>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Staff Workspace & Directory
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE TEAM DIRECTORY
+            </span>
           </div>
-        }
-      />
-      
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            {staff.length} team members · {onDuty} on duty right now across property operations.
+          </p>
+        </div>
 
-      <Card className="overflow-hidden">
+        <div className="flex items-center gap-2.5">
+          <SelectInput
+            value={department}
+            onChange={(event) => setDepartment(event.target.value as 'all' | Department)}
+            className="w-[170px]"
+            aria-label="Filter by department"
+          >
+            <option value="all">All departments</option>
+            {DEPARTMENTS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </SelectInput>
+          <PrimaryButton gradient onClick={() => setAddOpen(true)}>
+            <UserPlusIcon aria-hidden="true" className="h-4 w-4" />
+            Add staff
+          </PrimaryButton>
+        </div>
+      </div>
+
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL STAFF
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <UsersIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {staff.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">Employees</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              ON DUTY NOW
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <ClockIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {onDuty}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Active Shift</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              OFF DUTY / BREAK
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fef3c7] text-[#b45309] shadow-xs">
+              <ClockIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {offDuty}
+            </span>
+            <span className="text-xs font-semibold text-[#b45309]">Standby / Leave</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              DEPARTMENTS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0f2fe] text-[#0284c7] shadow-xs">
+              <BriefcaseIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {DEPARTMENTS.length}
+            </span>
+            <span className="text-xs font-semibold text-[#0284c7]">Operational Units</span>
+          </div>
+        </div>
+      </div>
+
+      <Card className="glass-card-premium border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
         <CardHeader title="Roster" subtitle={`${rows.length} team members in this view`} />
         <div className="overflow-x-auto border-t border-line">
           <table className="w-full min-w-[860px] text-left">

@@ -8,7 +8,7 @@ import {
   ReceiptIcon,
   SparklesIcon
 } from 'lucide-react';
-import { PageHeader, PrimaryButton, SearchInput } from '../components/ui';
+import { PageHeader, PrimaryButton, SearchInput, SelectInput } from '../components/ui';
 import { money } from '../utils/format';
 
 export interface ActivityEvent {
@@ -192,18 +192,102 @@ export function GuestActivity() {
   const selectedEvent = SEED_ACTIVITIES.find((act) => act.id === selectedId) || filtered[0];
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Monitoring"
-        title="Guest Activity"
-        subtitle="Real-time guest movements, room in/out activity tracking, and amenity access logs."
-        actions={
-          <PrimaryButton gradient onClick={() => alert('Activity log exported to CSV.')}>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Guest Activity & Telemetry
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE TELEMETRY MONITORING
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            Real-time guest movements, room in/out activity tracking, and amenity access logs.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <PrimaryButton gradient onClick={() => toast ? toast.success('Activity log exported to CSV.') : alert('Activity log exported to CSV.')}>
             <DownloadIcon aria-hidden="true" className="h-4 w-4" />
             Export Log
           </PrimaryButton>
-        }
-      />
+        </div>
+      </div>
+
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL LOGS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <DoorOpenIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {SEED_ACTIVITIES.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">Events Recorded</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              ROOM IN / OUT
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <LogOutIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {SEED_ACTIVITIES.filter((a) => a.status === 'IN' || a.status === 'OUT').length}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Door Swipes</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              AMENITY ACCESS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0f2fe] text-[#0284c7] shadow-xs">
+              <SparklesIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {SEED_ACTIVITIES.filter((a) => a.category !== 'room').length}
+            </span>
+            <span className="text-xs font-semibold text-[#0284c7]">Facilities & Spa</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TELEMETRY SENSORS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fef3c7] text-[#b45309] shadow-xs">
+              <LockIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              100%
+            </span>
+            <span className="text-xs font-semibold text-[#b45309]">Online & Active</span>
+          </div>
+        </div>
+      </div>
 
       {/* Horizontal Inline Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -215,15 +299,15 @@ export function GuestActivity() {
         />
 
         <div className="flex items-center gap-2">
-          <label className="text-[12px] font-semibold text-ink-muted">Filter by:</label>
-          <select
+          <label className="text-[12px] font-semibold text-slate-500">Filter by:</label>
+          <SelectInput
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as 'room' | 'amenities')}
-            className="h-10 rounded-lg border border-line bg-white px-3 text-[13px] font-medium text-ink focus:border-brand-400 focus:outline-none shadow-sm cursor-pointer"
+            className="w-[220px]"
           >
             <option value="room">Rooms (In/Out Activity)</option>
             <option value="amenities">Amenities & Services</option>
-          </select>
+          </SelectInput>
         </div>
       </div>
 

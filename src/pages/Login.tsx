@@ -11,8 +11,8 @@ import {
 
 export function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('alex.rivera@meridianhotels.com');
-  const [password, setPassword] = useState('sentinel-2024');
+  const [username, setUsername] = useState('alex.rivera@lodgelyresort.com');
+  const [password, setPassword] = useState('lodgely-2026');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -33,21 +33,15 @@ export function Login() {
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto bg-brand-gradient px-6 py-10">
       <div className="w-full max-w-[380px]">
         <div className="flex flex-col items-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-white shadow-panel">
-            <svg viewBox="0 0 20 20" className="h-7 w-7" aria-hidden="true">
-              <path
-                d="M10 2.5 17 6v5.2c0 3.2-2.8 5.6-7 6.3-4.2-.7-7-3.1-7-6.3V6l7-3.5Z"
-                fill="#25b84f" />
-              
-              <path d="M10 6.5 13.2 12H6.8L10 6.5Z" fill="#f2f9e6" />
-            </svg>
-          </span>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-[22px] font-bold tracking-tight text-white">Sentinel</span>
-            <span className="text-[13px] font-semibold text-white/80">ProPMS</span>
+          <div className="rounded-2xl bg-white p-3 shadow-panel">
+            <img src="/lodgely-logo.jpg" alt="Lodgely Logo" className="h-12 w-12 object-contain rounded-xl" />
           </div>
-          <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">
-            Hospitality Operations OS
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="font-fell-french text-3xl font-bold tracking-wider text-white">Lodgely</span>
+            <span className="text-[13px] font-semibold text-white/90">PMS</span>
+          </div>
+          <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-citrus-light">
+            Resort & Hotel OS
           </p>
         </div>
 

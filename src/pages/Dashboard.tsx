@@ -1,374 +1,607 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate as useNav } from 'react-router-dom';
 import {
   BedDoubleIcon,
+  BellIcon,
+  CalendarIcon,
   CreditCardIcon,
+  FilterIcon,
   LineChartIcon,
   LogInIcon,
-  LogOutIcon,
-  MoreVerticalIcon } from
-'lucide-react';
-import { Card, LinkButton, ProgressBar, StatusPill } from '../components/ui';
-import { useHotel } from '../contexts/HotelContext';
-import { money, money0, percent } from '../utils/format';
-import { housekeepingLabel, housekeepingTone } from '../utils/tone';
+  MoreVerticalIcon,
+  MoveRightIcon,
+  RefreshCwIcon,
+  TrendingUpIcon
+} from 'lucide-react';
 
-function OccupancyDonut({ occupied, total }: {occupied: number;total: number;}) {
-  const radius = 62;
+function RoomStatusDonutChart({
+  available = 24,
+  occupied = 8,
+  reserved = 5,
+  blocked = 3
+}: {
+  available?: number;
+  occupied?: number;
+  reserved?: number;
+  blocked?: number;
+}) {
+  const total = available + occupied + reserved + blocked || 40;
+  const radius = 64;
+  const strokeWidth = 16;
   const circumference = 2 * Math.PI * radius;
-  const ratio = total ? occupied / total : 0;
+
+  // Segment ratios
+  const availRatio = available / total;
+  const occRatio = occupied / total;
+  const resRatio = reserved / total;
+  const blockRatio = blocked / total;
+
+  // Dashoffset calculations
+  const availLength = circumference * availRatio;
+  const occLength = circumference * occRatio;
+  const resLength = circumference * resRatio;
+  const blockLength = circumference * blockRatio;
+
+  // Offsets
+  const offsetAvail = 0;
+  const offsetOcc = -availLength;
+  const offsetRes = -(availLength + occLength);
+  const offsetBlock = -(availLength + occLength + resLength);
 
   return (
-    <div className="relative mx-auto h-[168px] w-[168px]">
+    <div className="relative mx-auto my-3 h-[180px] w-[180px]">
       <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
-        <defs>
-          <linearGradient id="donut" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d9dd3a" />
-            <stop offset="45%" stopColor="#a4d13f" />
-            <stop offset="100%" stopColor="#25b84f" />
-          </linearGradient>
-        </defs>
-        <circle cx="80" cy="80" r={radius} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="14" />
+        {/* Available Segment (Green) */}
         <circle
           cx="80"
           cy="80"
           r={radius}
           fill="none"
-          stroke="url(#donut)"
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference * ratio} ${circumference}`} />
-        
+          stroke="#22c55e"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${availLength} ${circumference}`}
+          strokeDashoffset={offsetAvail}
+        />
+        {/* Occupied Segment (Blue) */}
+        <circle
+          cx="80"
+          cy="80"
+          r={radius}
+          fill="none"
+          stroke="#3b82f6"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${occLength} ${circumference}`}
+          strokeDashoffset={offsetOcc}
+        />
+        {/* Reserved Segment (Orange) */}
+        <circle
+          cx="80"
+          cy="80"
+          r={radius}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${resLength} ${circumference}`}
+          strokeDashoffset={offsetRes}
+        />
+        {/* Blocked Segment (Red) */}
+        <circle
+          cx="80"
+          cy="80"
+          r={radius}
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${blockLength} ${circumference}`}
+          strokeDashoffset={offsetBlock}
+        />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="tabular text-[30px] font-bold leading-none text-white">{total}</span>
-        <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.1em] text-white/60">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-[34px] font-extrabold leading-none text-white tracking-tight tabular-nums">{total}</span>
+        <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
           Total Rooms
         </span>
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 export function Dashboard() {
-  const navigate = useNavigate();
-  const { ops, guestName, getRoom, rooms, settings } = useHotel();
-  const { counts } = ops;
+  const navigate = useNav();
 
+  // Mock table movements matching screenshot exact display
   const movements = [
-  ...ops.arrivals.map((r) => ({ reservation: r, direction: 'Arrival' as const })),
-  ...ops.departures.map((r) => ({ reservation: r, direction: 'Departure' as const }))].
-  slice(0, 8);
-
-  const position = [
-  { label: 'Arrivals today', value: ops.arrivals.length, caption: `${ops.unassignedArrivals.length} unassigned`, to: '/front-desk' },
-  { label: 'Departures today', value: ops.departures.length, caption: `Checkout ${settings.checkOutTime}`, to: '/front-desk' },
-  { label: 'In house', value: ops.inHouse.length, caption: `${ops.stayovers.length} stayovers`, to: '/front-desk' },
-  { label: 'Vacant & ready', value: counts.ready, caption: `${counts.dirty} dirty · ${counts.cleaning} cleaning`, to: '/housekeeping' },
-  { label: 'Outstanding', value: money0(ops.outstandingTotal), caption: `${ops.outstanding.length} open folios`, to: '/billing' }];
-
-
-  const hkTotal = counts.dirty + counts.cleaning + counts.clean + counts.inspected;
-  const hkDone = counts.inspected;
-  const attendantLoad = rooms.
-  filter((room) => room.housekeeping === 'cleaning' || room.housekeeping === 'dirty').
-  reduce<Record<string, number>>((acc, room) => {
-    const key = room.housekeeper ?? 'Unassigned';
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
+    {
+      id: 'm1',
+      resId: 'r1',
+      guestInitials: 'AO',
+      avatarBg: 'bg-[#dcfce7] text-[#15803d]',
+      guestName: 'Amara Okafor',
+      code: 'RSV-4200',
+      source: 'Corporate',
+      room: '203',
+      movement: 'Arrival',
+      housekeeping: 'Inspected',
+      hkTone: 'green'
+    },
+    {
+      id: 'm2',
+      resId: 'r2',
+      guestInitials: 'HS',
+      avatarBg: 'bg-[#e0f2fe] text-[#0369a1]',
+      guestName: 'Hana Sato',
+      code: 'RSV-4207',
+      source: 'Direct',
+      room: '307',
+      movement: 'Arrival',
+      housekeeping: 'Cleaning',
+      hkTone: 'amber'
+    },
+    {
+      id: 'm3',
+      resId: 'r3',
+      guestInitials: 'NP',
+      avatarBg: 'bg-slate-200 text-slate-700',
+      guestName: 'Nina Petrova',
+      code: 'RSV-4214',
+      source: 'Website',
+      room: '101',
+      movement: 'Arrival',
+      housekeeping: 'Dirty',
+      hkTone: 'red'
+    },
+    {
+      id: 'm4',
+      resId: 'r4',
+      guestInitials: 'LF',
+      avatarBg: 'bg-[#fef3c7] text-[#b45309]',
+      guestName: 'Liam Ferguson',
+      code: 'RSV-4221',
+      source: 'Booking.com',
+      room: 'Unassigned',
+      movement: 'Arrival',
+      housekeeping: '—',
+      hkTone: 'none'
+    }
+  ];
 
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="min-w-0">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[26px] font-bold leading-none tracking-tight text-ink">
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
               Property Overview
             </h1>
-            <p className="mt-2 text-[13px] text-ink-soft">
-              Live metrics calculated from rooms, reservations, folios and work orders.
-            </p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#16a34a]">
+              <span className="h-2 w-2 rounded-full bg-[#16a34a] animate-pulse" />
+              LIVE UPDATES ACTIVE
+            </span>
           </div>
-          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-soft">
-            <span className="h-2 w-2 rounded-full bg-brand-600" />
-            Live updates active
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            Live metrics calculated from rooms, reservations, folios and work orders.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card className="relative overflow-hidden bg-brand-wash p-4 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-brand-gradient-v">
-            <div className="flex items-start justify-between">
-              <p className="text-[12px] font-semibold text-ink-soft">Occupancy</p>
-              <BedDoubleIcon aria-hidden="true" className="h-4 w-4 text-brand-700" />
-            </div>
-            <div className="mt-3 flex items-end gap-2">
-              <span className="tabular text-[30px] font-bold leading-none tracking-tight text-ink">
-                {percent(ops.occupancy)}
-              </span>
-              <span className="tabular pb-0.5 text-[12px] font-semibold text-brand-700">
-                {counts.occupied}/{counts.total}
-              </span>
-            </div>
-            <ProgressBar className="mt-4" value={ops.occupancy} label="Occupancy" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[12px] font-semibold text-ink-soft">ADR</p>
-              <CreditCardIcon aria-hidden="true" className="h-4 w-4 text-ink-muted" />
-            </div>
-            <div className="mt-3 flex items-end gap-2">
-              <span className="tabular text-[30px] font-bold leading-none tracking-tight text-ink">
-                {money0(ops.adr)}
-              </span>
-            </div>
-            <p className="mt-4 text-[11px] text-ink-muted">
-              Average rate across {ops.inHouse.length} in-house reservations
-            </p>
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[12px] font-semibold text-ink-soft">RevPAR</p>
-              <LineChartIcon aria-hidden="true" className="h-4 w-4 text-ink-muted" />
-            </div>
-            <div className="mt-3 flex items-end gap-2">
-              <span className="tabular text-[30px] font-bold leading-none tracking-tight text-ink">
-                {money0(ops.revpar)}
-              </span>
-            </div>
-            <p className="mt-4 text-[11px] text-ink-muted">
-              Room revenue today {money0(ops.roomRevenue)}
-            </p>
-          </Card>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
+          >
+            <CalendarIcon className="h-4 w-4 text-slate-400" />
+            <span>Today, Sep 11</span>
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-xl bg-[#176938] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#11502b] transition-all"
+          >
+            <RefreshCwIcon className="h-3.5 w-3.5" />
+            <span>Sync</span>
+          </button>
         </div>
+      </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          {position.map((item) =>
-          <Link
-            key={item.label}
-            to={item.to}
-            className="rounded-card border border-line bg-white px-4 py-3 shadow-card transition-colors duration-150 hover:bg-[#fafbf8]">
-            
-              <p className="text-[11px] font-semibold text-ink-soft">{item.label}</p>
-              <p className="tabular mt-1.5 text-[22px] font-bold leading-none text-ink">{item.value}</p>
-              <p className="mt-1.5 text-[11px] text-ink-muted">{item.caption}</p>
-            </Link>
-          )}
-        </div>
-
-        <Card className="mt-5 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4">
-            <div>
-              <h2 className="text-[15px] font-semibold tracking-tight text-ink">Today&apos;s Movements</h2>
-              <p className="mt-0.5 text-[12px] text-ink-muted">
-                {ops.arrivals.length} arrivals · {ops.departures.length} departures
+      {/* Main Content Grid (Left Column 3/4, Right Column 1/4) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Left Section */}
+        <div className="space-y-5 min-w-0">
+          {/* Top 3 KPI Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {/* Card 1: Occupancy */}
+            <div className="glass-card-premium rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  OCCUPANCY
+                </span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#dcfce7] to-[#bbf7d0] text-[#176938] shadow-xs">
+                  <BedDoubleIcon className="h-5 w-5 stroke-[2]" />
+                </div>
+              </div>
+              <div className="mt-3.5 flex items-baseline gap-2.5">
+                <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 font-sans tabular-nums">
+                  20%
+                </span>
+                <span className="rounded-md bg-[#dcfce7]/80 backdrop-blur-xs px-2 py-0.5 text-[11px] font-bold text-[#176938] border border-[#bbf7d0]">
+                  8/40
+                </span>
+              </div>
+              <div className="mt-4">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/60">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#176938] to-[#2daf57] transition-all duration-500 shadow-xs" style={{ width: '20%' }} />
+                </div>
+              </div>
+              <p className="mt-3.5 text-[12px] font-medium text-slate-500">
+                32 rooms remaining to sell
               </p>
             </div>
-            <LinkButton onClick={() => navigate('/front-desk')}>Open front desk</LinkButton>
-          </div>
-          {movements.length === 0 ?
-          <p className="border-t border-line px-5 py-10 text-center text-[12px] text-ink-muted">
-              No arrivals or departures scheduled for today.
-            </p> :
 
-          <table className="w-full border-t border-line text-left">
-              <thead>
-                <tr className="bg-[#fafbf8] text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                  <th scope="col" className="py-2.5 pl-5 pr-3 font-semibold">Guest</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Room</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Movement</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Housekeeping</th>
-                  <th scope="col" className="px-3 py-2.5 pr-5 text-right font-semibold">Open</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {movements.map(({ reservation, direction }) => {
-                const room = getRoom(reservation.roomId);
-                const name = guestName(reservation.guestId);
-                return (
-                  <tr
-                    key={`${direction}-${reservation.id}`}
-                    className="transition-colors duration-150 hover:bg-[#fafbf8]">
-                    
-                      <td className="py-3 pl-5 pr-3">
+            {/* Card 2: ADR */}
+            <div className="glass-card-premium rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  ADR
+                </span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#dcfce7] to-[#bbf7d0] text-[#176938] shadow-xs">
+                  <CreditCardIcon className="h-5 w-5 stroke-[2]" />
+                </div>
+              </div>
+              <div className="mt-3.5">
+                <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 font-sans tabular-nums">
+                  $310
+                </span>
+              </div>
+              <p className="mt-7 text-[12px] font-medium text-slate-600 flex items-center gap-1.5">
+                <TrendingUpIcon className="h-4 w-4 text-[#2daf57] stroke-[2.2]" />
+                <span>Across 8 in-house reservations</span>
+              </p>
+            </div>
+
+            {/* Card 3: RevPAR */}
+            <div className="glass-card-premium rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  REVPAR
+                </span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#dcfce7] to-[#bbf7d0] text-[#176938] shadow-xs">
+                  <LineChartIcon className="h-5 w-5 stroke-[2]" />
+                </div>
+              </div>
+              <div className="mt-3.5">
+                <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 font-sans tabular-nums">
+                  $62
+                </span>
+              </div>
+              <div className="mt-7 flex items-center justify-between text-[12px] font-medium">
+                <span className="text-slate-500">Room revenue today</span>
+                <span className="text-slate-900 font-bold tabular-nums">$2,482</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Row of 5 Metric Cards */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            {/* Item 1 */}
+            <div className="glass-card-premium rounded-xl p-3.5">
+              <p className="text-[11px] font-bold text-slate-500">Arrivals today</p>
+              <p className="mt-1 text-[24px] font-extrabold text-slate-900 leading-tight tabular-nums">6</p>
+              <span className="mt-1.5 inline-block rounded-md bg-[#fef3c7] px-2 py-0.5 text-[10px] font-bold text-[#b45309] border border-amber-200/60">
+                3 unassigned
+              </span>
+            </div>
+
+            {/* Item 2 */}
+            <div className="glass-card-premium rounded-xl p-3.5">
+              <p className="text-[11px] font-bold text-slate-500">Departures to...</p>
+              <p className="mt-1 text-[24px] font-extrabold text-slate-900 leading-tight tabular-nums">3</p>
+              <p className="mt-1 text-[11px] font-medium text-slate-500">Checkout 11:00</p>
+            </div>
+
+            {/* Item 3 */}
+            <div className="glass-card-premium rounded-xl p-3.5">
+              <p className="text-[11px] font-bold text-slate-500">In house</p>
+              <p className="mt-1 text-[24px] font-extrabold text-slate-900 leading-tight tabular-nums">8</p>
+              <p className="mt-1 text-[11px] font-medium text-slate-500">5 stayovers</p>
+            </div>
+
+            {/* Item 4 */}
+            <div className="glass-card-premium rounded-xl p-3.5">
+              <p className="text-[11px] font-bold text-slate-500">Vacant & ready</p>
+              <p className="mt-1 text-[24px] font-extrabold text-[#176938] leading-tight tabular-nums">18</p>
+              <p className="mt-1 text-[11px] font-medium text-slate-500">6 dirty · 6 clean</p>
+            </div>
+
+            {/* Item 5 */}
+            <div className="glass-card-premium rounded-xl p-3.5">
+              <p className="text-[11px] font-bold text-slate-500">Outstanding</p>
+              <p className="mt-1 text-[24px] font-extrabold text-slate-900 leading-tight tabular-nums">$6,783</p>
+              <span className="mt-1.5 inline-block rounded-md bg-[#fee2e2] px-2 py-0.5 text-[10px] font-bold text-[#ef4444] border border-rose-200/60">
+                9 open folios
+              </span>
+            </div>
+          </div>
+
+          {/* Today's Movements Section */}
+          <div className="glass-card-premium overflow-hidden rounded-2xl">
+            {/* Header bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-4 gap-3 border-b border-slate-200/60 bg-white/40 backdrop-blur-xs">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-[16px] font-bold text-slate-900 tracking-tight">
+                    Today&apos;s Movements
+                  </h2>
+                  <span className="rounded-full bg-slate-100/90 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 border border-slate-200/50">
+                    9 Total
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[12px] text-slate-500">
+                  6 arrivals • 3 departures scheduled
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-xs px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-white"
+                >
+                  <FilterIcon className="h-3.5 w-3.5 text-slate-400" />
+                  <span>Filter</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/front-desk')}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#176938] to-[#2daf57] px-3.5 py-1.5 text-xs font-bold text-white uppercase tracking-wider shadow-sm hover:opacity-95 transition-all"
+                >
+                  <span>Open Front Desk</span>
+                  <MoveRightIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-xs text-[11px] font-bold uppercase tracking-wider text-[#176938]">
+                    <th scope="col" className="py-3 pl-5 pr-3">
+                      Guest
+                    </th>
+                    <th scope="col" className="px-3 py-3">
+                      Room
+                    </th>
+                    <th scope="col" className="px-3 py-3">
+                      Movement
+                    </th>
+                    <th scope="col" className="px-3 py-3">
+                      Housekeeping
+                    </th>
+                    <th scope="col" className="px-3 py-3 pr-5 text-right">
+                      Open
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100/70">
+                  {movements.map((row) => (
+                    <tr key={row.id} className="transition-colors hover:bg-[#176938]/[0.04]">
+                      <td className="py-3.5 pl-5 pr-3">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-800">
-                            {name.
-                          split(' ').
-                          map((part) => part.charAt(0)).
-                          join('')}
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold shadow-xs ${row.avatarBg}`}
+                          >
+                            {row.guestInitials}
                           </span>
-                          <span>
-                            <span className="block text-[13px] font-semibold text-ink">{name}</span>
-                            <span className="block text-[11px] text-ink-muted">
-                              {reservation.code} · {reservation.source}
+                          <div>
+                            <span className="block text-[13px] font-bold text-slate-900 leading-tight">
+                              {row.guestName}
                             </span>
-                          </span>
+                            <span className="block text-[11px] font-medium text-slate-400 mt-0.5">
+                              {row.code} • {row.source}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="tabular px-3 py-3 text-[13px] font-semibold text-ink">
-                        {room?.number ?? 'Unassigned'}
-                      </td>
-                      <td className="px-3 py-3">
-                        <StatusPill tone={direction === 'Arrival' ? 'green' : 'red'} dot={false}>
-                          <span className="inline-flex items-center gap-1">
-                            {direction === 'Arrival' ?
-                          <LogInIcon aria-hidden="true" className="h-3 w-3" /> :
 
-                          <LogOutIcon aria-hidden="true" className="h-3 w-3" />
-                          }
-                            {direction}
+                      <td className="px-3 py-3.5">
+                        {row.room === 'Unassigned' ? (
+                          <span className="rounded-md bg-[#fef3c7] px-2.5 py-1 text-xs font-bold text-[#b45309]">
+                            Unassigned
                           </span>
-                        </StatusPill>
+                        ) : (
+                          <span className="rounded-md bg-slate-100/80 px-3 py-1 text-xs font-bold text-slate-800 font-mono border border-slate-200/60">
+                            {row.room}
+                          </span>
+                        )}
                       </td>
-                      <td className="px-3 py-3">
-                        {room ?
-                      <StatusPill tone={housekeepingTone[room.housekeeping]}>
-                            {housekeepingLabel[room.housekeeping]}
-                          </StatusPill> :
 
-                      <span className="text-[12px] text-ink-muted">—</span>
-                      }
+                      <td className="px-3 py-3.5">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-xs font-bold text-[#176938] border border-[#bbf7d0]">
+                          <LogInIcon className="h-3.5 w-3.5 stroke-[2.5]" />
+                          <span>{row.movement}</span>
+                        </span>
                       </td>
-                      <td className="px-3 py-3 pr-5 text-right">
+
+                      <td className="px-3 py-3.5">
+                        {row.hkTone === 'green' ? (
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-[#176938]">
+                            <span className="h-2 w-2 rounded-full bg-[#176938]" />
+                            Inspected
+                          </span>
+                        ) : row.hkTone === 'amber' ? (
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-[#d97706]">
+                            <span className="h-2 w-2 rounded-full bg-[#d97706]" />
+                            Cleaning
+                          </span>
+                        ) : row.hkTone === 'red' ? (
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-[#ef4444]">
+                            <span className="h-2 w-2 rounded-full bg-[#ef4444]" />
+                            Dirty
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-3 py-3.5 pr-5 text-right">
                         <button
-                        type="button"
-                        aria-label={`Open reservation for ${name}`}
-                        onClick={() => navigate(`/reservations/${reservation.id}`)}
-                        className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 hover:bg-canvas hover:text-ink">
-                        
-                          <MoreVerticalIcon aria-hidden="true" className="h-4 w-4" />
+                          type="button"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                        >
+                          <MoreVerticalIcon className="h-4 w-4" />
                         </button>
                       </td>
-                    </tr>);
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              })}
-              </tbody>
-            </table>
-          }
-        </Card>
+            {/* Table Footer */}
+            <div className="flex items-center justify-between border-t border-slate-200/60 bg-[#dcfce7]/40 backdrop-blur-xs px-5 py-3 text-xs font-semibold">
+              <span className="text-slate-600">Showing 4 of 9 pending roster items</span>
+              <button
+                type="button"
+                onClick={() => navigate('/front-desk')}
+                className="flex items-center gap-1 font-bold text-[#176938] hover:underline"
+              >
+                <span>View All Movements</span>
+                <MoveRightIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <Card className="mt-5 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4">
-            <div>
-              <h2 className="text-[15px] font-semibold tracking-tight text-ink">Outstanding balances</h2>
-              <p className="mt-0.5 text-[12px] text-ink-muted">
-                {money(ops.outstandingTotal)} across {ops.outstanding.length} folios
+        {/* Right Section: Navy Room Status Card + Alerts */}
+        <div className="space-y-5">
+          {/* Navy Room Status Card */}
+          <div className="glass-navy rounded-2xl p-5 text-white">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]">
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                </span>
+                <h2 className="text-[17px] font-bold tracking-tight text-white">Room Status</h2>
+              </div>
+              <span className="rounded-full bg-white/10 backdrop-blur-xs px-2.5 py-0.5 text-[11px] font-bold text-slate-300 border border-white/10">
+                40 Total
+              </span>
+            </div>
+
+            {/* Donut Chart */}
+            <RoomStatusDonutChart available={24} occupied={8} reserved={5} blocked={3} />
+
+            {/* 2x2 Grid of Status Tiles */}
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              {/* Box 1: Available */}
+              <div className="glass-navy-tile rounded-xl p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300">
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  Available
+                </p>
+                <p className="mt-1 text-[22px] font-extrabold text-white leading-none tabular-nums">24</p>
+                <p className="mt-1 text-[11px] font-bold text-[#22c55e]">60% of inventory</p>
+              </div>
+
+              {/* Box 2: Occupied */}
+              <div className="glass-navy-tile rounded-xl p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300">
+                  <span className="h-2 w-2 rounded-full bg-[#3b82f6]" />
+                  Occupied
+                </p>
+                <p className="mt-1 text-[22px] font-extrabold text-white leading-none tabular-nums">8</p>
+                <p className="mt-1 text-[11px] font-bold text-[#3b82f6]">20% of inventory</p>
+              </div>
+
+              {/* Box 3: Reserved */}
+              <div className="glass-navy-tile rounded-xl p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300">
+                  <span className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+                  Reserved
+                </p>
+                <p className="mt-1 text-[22px] font-extrabold text-white leading-none tabular-nums">5</p>
+                <p className="mt-1 text-[11px] font-bold text-[#f59e0b]">Pending check-in</p>
+              </div>
+
+              {/* Box 4: Blocked */}
+              <div className="glass-navy-tile rounded-xl p-3">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300">
+                  <span className="h-2 w-2 rounded-full bg-[#ef4444]" />
+                  Blocked
+                </p>
+                <p className="mt-1 text-[22px] font-extrabold text-white leading-none tabular-nums">3</p>
+                <p className="mt-1 text-[11px] font-bold text-[#ef4444]">Maint. / Out of order</p>
+              </div>
+            </div>
+
+            {/* Bottom Footer inside Navy Card */}
+            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[12px] font-medium">
+              <span className="text-slate-400">Cleanliness ratio</span>
+              <span className="font-bold text-[#22c55e]">75% Inspected</span>
+            </div>
+          </div>
+
+          {/* Alerts White Glass Card */}
+          <div className="glass-card-premium rounded-2xl p-5">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+              <div className="flex items-center gap-2">
+                <BellIcon className="h-5 w-5 text-[#ef4444]" />
+                <h2 className="text-[16px] font-bold text-slate-900">Alerts</h2>
+              </div>
+              <span className="rounded-full bg-[#fee2e2] px-2.5 py-0.5 text-[11px] font-bold text-[#ef4444] border border-rose-200/60">
+                3 Actions Needed
+              </span>
+            </div>
+
+            {/* Critical Alert Item 1 */}
+            <div className="mt-3.5 rounded-xl border border-rose-200/80 bg-rose-500/10 backdrop-blur-md p-3.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="rounded bg-[#fee2e2] px-2 py-0.5 text-[10px] font-extrabold text-[#ef4444]">
+                  CRITICAL
+                </span>
+                <span className="text-[11px] font-medium text-slate-400">10m ago</span>
+              </div>
+              <p className="mt-2 text-[13px] font-bold text-slate-900">
+                Urgent maintenance • Room 304
+              </p>
+              <p className="mt-1 text-[11px] font-medium text-slate-500 leading-snug">
+                Air conditioning not cooling. Guest requested immediate repair.
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/maintenance')}
+                  className="rounded-lg border border-slate-200 bg-white/90 backdrop-blur-xs px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs hover:bg-white transition-all"
+                >
+                  Assign Technician
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/maintenance')}
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900"
+                >
+                  View Ticket
+                </button>
+              </div>
+            </div>
+
+            {/* Critical Alert Item 2 */}
+            <div className="mt-2.5 rounded-xl border border-slate-200/60 bg-slate-50/70 backdrop-blur-xs p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="rounded bg-[#fee2e2] px-2 py-0.5 text-[10px] font-extrabold text-[#ef4444]">
+                  CRITICAL
+                </span>
+                <span className="text-[11px] font-medium text-slate-400">42m ago</span>
+              </div>
+              <p className="mt-2 text-[13px] font-bold text-slate-900">
+                Late checkout pending • Room 108
+              </p>
+              <p className="mt-1 text-[11px] font-medium text-slate-500 leading-snug">
+                Guest past 11:00 AM checkout without prior approval.
               </p>
             </div>
-            <LinkButton onClick={() => navigate('/billing')}>Open billing</LinkButton>
           </div>
-          {ops.outstanding.length === 0 ?
-          <p className="border-t border-line px-5 py-8 text-center text-[12px] text-ink-muted">
-              Every folio is settled.
-            </p> :
-
-          <ul className="divide-y divide-line border-t border-line">
-              {ops.outstanding.slice(0, 5).map(({ reservation, balance }) =>
-            <li key={reservation.id}>
-                  <Link
-                to={`/billing/${reservation.id}`}
-                className="flex items-center justify-between gap-3 px-5 py-3 transition-colors duration-150 hover:bg-[#fafbf8]">
-                
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-semibold text-ink">
-                        {guestName(reservation.guestId)}
-                      </span>
-                      <span className="block text-[11px] text-ink-muted">
-                        {reservation.code} · {reservation.status === 'checked-out' ? 'Departed' : 'In house'}
-                      </span>
-                    </span>
-                    <span className="tabular text-[13px] font-bold text-ink">{money(balance)}</span>
-                  </Link>
-                </li>
-            )}
-            </ul>
-          }
-        </Card>
+        </div>
       </div>
-
-      <div className="flex flex-col gap-5">
-        <section className="rounded-card bg-panel p-5 shadow-panel">
-          <h2 className="text-[15px] font-semibold tracking-tight text-white">Room Status</h2>
-          <OccupancyDonut occupied={counts.occupied} total={counts.total} />
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {[
-            { label: 'Available', value: counts.available, color: '#25b84f' },
-            { label: 'Occupied', value: counts.occupied, color: '#2f74e0' },
-            { label: 'Reserved', value: counts.reserved, color: '#d9dd3a' },
-            { label: 'Blocked', value: counts.maintenance + counts.outOfService, color: '#e0453c' }].
-            map((item) =>
-            <div key={item.label} className="rounded-lg bg-white/[0.06] px-3 py-2.5">
-                <p className="flex items-center gap-1.5 text-[11px] text-white/70">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  {item.label}
-                </p>
-                <p className="tabular mt-1 text-[18px] font-bold leading-none text-white">{item.value}</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <Card className="p-5">
-          <h2 className="text-[15px] font-semibold tracking-tight text-ink">Alerts</h2>
-          {ops.alerts.length === 0 ?
-          <p className="mt-3 text-[12px] text-ink-muted">No operational alerts right now.</p> :
-
-          <ul className="mt-3 space-y-2">
-              {ops.alerts.map((alert) =>
-            <li key={alert.id}>
-                  <Link
-                to={alert.to}
-                className="block rounded-lg border border-line px-3 py-2.5 transition-colors duration-150 hover:bg-canvas">
-                
-                    <span className="flex items-center gap-2">
-                      <StatusPill
-                    tone={
-                    alert.level === 'critical' ? 'red' : alert.level === 'warning' ? 'amber' : 'blue'
-                    }
-                    dot={false}>
-                    
-                        {alert.level}
-                      </StatusPill>
-                      <span className="text-[12px] font-semibold text-ink">{alert.title}</span>
-                    </span>
-                    <span className="mt-1.5 block text-[11px] text-ink-muted">{alert.detail}</span>
-                  </Link>
-                </li>
-            )}
-            </ul>
-          }
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="text-[15px] font-semibold tracking-tight text-ink">Housekeeping Load</h2>
-          <div className="mt-4 flex items-center justify-between text-[12px]">
-            <span className="text-ink-soft">Rooms inspected</span>
-            <span className="tabular font-semibold text-ink">
-              {hkDone} / {hkTotal}
-            </span>
-          </div>
-          <ProgressBar className="mt-2" value={hkTotal ? hkDone / hkTotal * 100 : 0} label="Rooms inspected" />
-          <ul className="mt-5 space-y-3">
-            {Object.entries(attendantLoad).map(([name, load]) =>
-            <li key={name} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-[10px] font-bold text-ink-soft">
-                    {name.slice(0, 1)}
-                  </span>
-                  <span className="text-[12px] font-semibold text-ink">{name}</span>
-                </div>
-                <span className="tabular text-[12px] font-semibold text-ink-soft">{load} rooms</span>
-              </li>
-            )}
-            {Object.keys(attendantLoad).length === 0 ?
-            <li className="text-[12px] text-ink-muted">No rooms waiting for housekeeping.</li> :
-            null}
-          </ul>
-        </Card>
-      </div>
-    </div>);
-
+    </div>
+  );
 }

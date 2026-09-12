@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 
-let activeCurrency = 'USD';
+let activeCurrency = 'INR';
 
 export function setGlobalCurrency(code: string) {
   if (code) activeCurrency = code;

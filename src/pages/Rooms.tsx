@@ -89,20 +89,104 @@ export function Rooms() {
   }, [filtered]);
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Inventory"
-        title="Rooms"
-        subtitle={`${ops.counts.total} rooms · ${ops.counts.available} available · ${ops.counts.occupied} occupied · ${
-          ops.counts.maintenance + ops.counts.outOfService
-        } blocked`}
-        actions={
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Rooms & Property Inventory
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE ROOM INVENTORY
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            {ops.counts.total} total rooms · {ops.counts.available} available · {ops.counts.occupied} occupied · {
+              ops.counts.maintenance + ops.counts.outOfService
+            } blocked
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
           <PrimaryButton gradient onClick={() => setAddRoomOpen(true)}>
             <PlusIcon aria-hidden="true" className="h-4 w-4" />
             Add Room
           </PrimaryButton>
-        }
-      />
+        </div>
+      </div>
+
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL ROOMS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <BedDoubleIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.counts.total}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">Inventory</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              AVAILABLE READY
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <BedDoubleIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.counts.available}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Clean & Vacant</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              OCCUPIED
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-red-700 shadow-xs">
+              <BedDoubleIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.counts.occupied}
+            </span>
+            <span className="text-xs font-semibold text-red-700">In-House Guests</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              BLOCKED / OUT OF SERVICE
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fef3c7] text-[#b45309] shadow-xs">
+              <WrenchIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {ops.counts.maintenance + ops.counts.outOfService}
+            </span>
+            <span className="text-xs font-semibold text-[#b45309]">Maintenance</span>
+          </div>
+        </div>
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput
@@ -257,10 +341,10 @@ export function Rooms() {
                           onClick={() => setSelectedId(room.id)}
                           aria-pressed={isSelected}
                           className={[
-                            'relative flex min-h-[110px] flex-col justify-between rounded-xl border bg-white p-4 pl-5 text-left shadow-sm transition-all duration-150 hover:shadow-md',
+                            'relative flex min-h-[110px] flex-col justify-between rounded-xl border p-4 pl-5 text-left shadow-sm transition-all duration-150 hover:shadow-md glass-card-premium',
                             isSelected
-                              ? 'border-brand-500 ring-2 ring-brand-500/20'
-                              : 'border-gray-200/80 hover:border-gray-300'
+                              ? 'border-[#176938] ring-2 ring-[#176938]/20 bg-emerald-50/30'
+                              : 'border-slate-200/80 bg-white/80 hover:border-slate-300'
                           ].join(' ')}
                         >
                           {/* Left accent bar */}

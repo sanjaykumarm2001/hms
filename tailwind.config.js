@@ -13,27 +13,31 @@ export default {content: [
         },
         line: '#e6e8e3',
         brand: {
-          50: '#f6faec',
-          100: '#eaf5d5',
-          200: '#d6ebac',
-          300: '#b9de6f',
-          400: '#a4d13f',
-          500: '#60c64a',
-          600: '#25b84f',
-          700: '#1c9440',
-          800: '#167233',
-          900: '#0f4d23'
+          50: '#f4f9f1',
+          100: '#e3f2e4',
+          200: '#c5e5c8',
+          300: '#94d19b',
+          400: '#5ab664',
+          500: '#2daf57',
+          600: '#1e8e44',
+          700: '#176938',
+          800: '#14542e',
+          900: '#104526'
         },
-        citrus: '#d9dd3a',
-        panel: '#0e1113'
+        citrus: {
+          DEFAULT: '#d0c44e',
+          light: '#f5f2d0',
+          dark: '#9e932b'
+        },
+        panel: '#0c1829'
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #d9dd3a, #a4d13f, #60c64a, #25b84f)',
-        'brand-gradient-v': 'linear-gradient(180deg, #d9dd3a, #a4d13f, #60c64a, #25b84f)',
-        'brand-wash': 'linear-gradient(135deg, #fbfde9, #f0f8dc, #e2f4e2)'
+        'brand-gradient': 'linear-gradient(135deg, #d0c44e, #2daf57, #176938)',
+        'brand-gradient-v': 'linear-gradient(180deg, #d0c44e, #2daf57, #176938)',
+        'brand-wash': 'linear-gradient(135deg, #fbfde9, #edf7f0, #e3f2e4)'
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       boxShadow: {
         card: '0 1px 2px rgba(16, 24, 20, 0.04), 0 1px 12px rgba(16, 24, 20, 0.04)',

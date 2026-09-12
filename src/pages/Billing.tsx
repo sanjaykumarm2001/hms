@@ -384,36 +384,47 @@ export function Billing() {
   };
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Finance & Reports"
-        title="Report"
-        subtitle={`${money(ops.outstandingTotal)} outstanding across ${ops.outstanding.length} folios`}
-        actions={
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1.5 rounded-lg border border-line bg-white/80 px-2.5 py-1 text-[12px]">
-              <span className="font-semibold text-ink-muted">From:</span>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="bg-transparent text-ink font-medium outline-none"
-              />
-              <span className="font-semibold text-ink-muted">To:</span>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="bg-transparent text-ink font-medium outline-none"
-              />
-            </div>
-            <PrimaryButton gradient onClick={handleExportCSV}>
-              <DownloadIcon aria-hidden="true" className="h-4 w-4" />
-              Export CSV
-            </PrimaryButton>
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Billing & Folio Ledger
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE FINANCIAL LEDGER
+            </span>
           </div>
-        }
-      />
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            {money(ops.outstandingTotal)} outstanding across {ops.outstanding.length} folios
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white/90 px-3 py-1.5 text-xs">
+            <span className="font-semibold text-slate-500">From:</span>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer"
+            />
+            <span className="font-semibold text-slate-500">To:</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer"
+            />
+          </div>
+          <PrimaryButton onClick={handleExportCSV}>
+            <DownloadIcon aria-hidden="true" className="h-4 w-4" />
+            Export CSV
+          </PrimaryButton>
+        </div>
+      </div>
 
       {/* Main Tab Navigation: Folio Ledger vs Reports */}
       <div className="mb-5 flex border-b border-line">
@@ -490,31 +501,33 @@ export function Billing() {
           )}
 
           {/* Summary Cards with Dynamic Totals */}
-          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { label: 'Charges in view', value: money(totals.charges) },
-              { label: 'Payments in view', value: money(totals.paid) },
+              { label: 'Charges in view', value: money(totals.charges), color: 'text-slate-900', bg: 'bg-slate-50' },
+              { label: 'Payments in view', value: money(totals.paid), color: 'text-[#176938]', bg: 'bg-emerald-50' },
               {
                 label: 'Balance in view',
                 value: money(totals.balance),
+                color: totals.balance > 0 ? 'text-amber-700' : 'text-[#176938]',
+                bg: totals.balance > 0 ? 'bg-amber-50' : 'bg-emerald-50',
                 isHighlighted: excludedIds.size > 0
               }
             ].map((item) => (
-              <Card key={item.label} className="p-4">
+              <div key={item.label} className="glass-card-premium p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <p className="text-[12px] font-semibold text-ink-soft">{item.label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
                   {item.isHighlighted && (
-                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                    <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                       Exclusions Applied
                     </span>
                   )}
                 </div>
-                <p className="tabular mt-2 text-[24px] font-bold leading-none text-ink">{item.value}</p>
-              </Card>
+                <p className={`tabular mt-3 text-2xl font-bold leading-none ${item.color}`}>{item.value}</p>
+              </div>
             ))}
           </div>
 
-          <Card className="overflow-hidden">
+          <Card className="glass-card-premium p-0 border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
               <CardHeader
                 title="Folio ledger"
@@ -757,6 +770,67 @@ export function Billing() {
             </div>
           )}
 
+          {/* GRAND TOTAL SUMMARY (Rendered ABOVE Report Tables) */}
+          {selectedReportIds.size > 0 && (
+            <div className="glass-card-premium rounded-2xl border border-white/80 p-5 text-gray-900 shadow-md space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#176938]">
+                    REPORT GRAND TOTAL SUMMARY
+                  </p>
+                  <h3 className="text-xl font-bold tracking-tight text-slate-900">Financial & Property Totals Summary</h3>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938] border border-emerald-200/60">
+                  {selectedReportIds.size} Cards Active
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6 pt-1">
+                <div className="glass-card-premium p-4 rounded-xl border border-slate-200/80 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Total Bookings</span>
+                  <span className="mt-2 block text-[24px] font-extrabold leading-none text-slate-900 tabular-nums">
+                    {grandTotals.totalBookings}
+                  </span>
+                </div>
+
+                <div className="glass-card-premium p-4 rounded-xl border border-slate-200/80 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Included Guests</span>
+                  <span className="mt-2 block text-[24px] font-extrabold leading-none text-slate-900 tabular-nums">
+                    {grandTotals.uniqueGuests}
+                  </span>
+                </div>
+
+                <div className="glass-card-premium p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-[#176938]">Estimated Revenue</span>
+                  <span className="mt-2 block text-[22px] font-extrabold leading-none text-[#176938] tabular-nums">
+                    {money(grandTotals.totalEstimatedRevenue)}
+                  </span>
+                </div>
+
+                <div className="glass-card-premium p-4 rounded-xl border border-blue-200/80 bg-blue-50/40 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-[#0284c7]">Posted Charges</span>
+                  <span className="mt-2 block text-[22px] font-extrabold leading-none text-[#0284c7] tabular-nums">
+                    {money(grandTotals.totalPostedCharges)}
+                  </span>
+                </div>
+
+                <div className="glass-card-premium p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-[#176938]">Payments Collected</span>
+                  <span className="mt-2 block text-[22px] font-extrabold leading-none text-[#176938] tabular-nums">
+                    {money(grandTotals.totalPaymentsCollected)}
+                  </span>
+                </div>
+
+                <div className="glass-card-premium p-4 rounded-xl border border-amber-200/80 bg-amber-50/40 shadow-xs hover:-translate-y-0.5 transition-all">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-[#b45309]">Net Outstanding</span>
+                  <span className="mt-2 block text-[22px] font-extrabold leading-none text-[#b45309] tabular-nums">
+                    {money(grandTotals.netOutstanding)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Selected Report Tables Render Loop */}
           {selectedReportIds.size === 0 ? (
             <Card className="p-12 text-center">
@@ -829,67 +903,6 @@ export function Billing() {
                 </Card>
               );
             })
-          )}
-
-          {/* GRAND TOTAL BELOW (Summarized at the bottom) */}
-          {selectedReportIds.size > 0 && (
-            <div className="rounded-2xl border border-brand-200 bg-white p-6 text-gray-900 shadow-md space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
-                    REPORT GRAND TOTAL SUMMARY
-                  </p>
-                  <h3 className="text-xl font-extrabold text-gray-900">Financial & Property Totals Below</h3>
-                </div>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 border border-brand-200">
-                  {selectedReportIds.size} Cards Active
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 pt-2">
-                <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
-                  <span className="block text-[11px] font-semibold text-gray-500">Total Bookings</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-gray-900">
-                    {grandTotals.totalBookings}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
-                  <span className="block text-[11px] font-semibold text-gray-500">Included Guests</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-gray-900">
-                    {grandTotals.uniqueGuests}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-emerald-50/60 p-3.5 border border-emerald-100">
-                  <span className="block text-[11px] font-semibold text-emerald-800">Estimated Revenue</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-emerald-600">
-                    {money(grandTotals.totalEstimatedRevenue)}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-blue-50/60 p-3.5 border border-blue-100">
-                  <span className="block text-[11px] font-semibold text-blue-800">Posted Charges</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-blue-600">
-                    {money(grandTotals.totalPostedCharges)}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-emerald-50/60 p-3.5 border border-emerald-100">
-                  <span className="block text-[11px] font-semibold text-emerald-800">Payments Collected</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-emerald-600">
-                    {money(grandTotals.totalPaymentsCollected)}
-                  </span>
-                </div>
-
-                <div className="rounded-xl bg-amber-50/60 p-3.5 border border-amber-100">
-                  <span className="block text-[11px] font-semibold text-amber-800">Net Outstanding</span>
-                  <span className="mt-1 block text-2xl font-extrabold text-amber-600">
-                    {money(grandTotals.netOutstanding)}
-                  </span>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       )}

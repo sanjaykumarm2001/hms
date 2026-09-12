@@ -23,6 +23,8 @@ import {
   roomStatusTone } from
 '../utils/tone';
 
+type Filter = 'dirty' | 'cleaning' | 'completed' | 'all';
+
 function nextAction(status: HousekeepingStatus): { label: string; next: HousekeepingStatus } | null {
   if (status === 'dirty') return { label: 'Start cleaning', next: 'cleaning' };
   if (status === 'cleaning') return { label: 'Mark clean', next: 'clean' };
@@ -60,30 +62,105 @@ export function Housekeeping() {
     [filter, priority, rooms]
   );
 
-  const { counts } = ops;
-  const completedCount = counts.clean + counts.inspected;
+  const counts = useMemo(() => {
+    return {
+      dirty: rooms.filter((r) => r.housekeeping === 'dirty').length,
+      cleaning: rooms.filter((r) => r.housekeeping === 'cleaning').length,
+      completed: rooms.filter((r) => r.housekeeping === 'clean' || r.housekeeping === 'inspected').length
+    };
+  }, [rooms]);
+
+  const completedCount = counts.completed;
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Operations"
-        title="Housekeeping"
-        subtitle="Dirty → Cleaning → Completed. Departures land here automatically at high priority." />
+    <div className="space-y-6">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-none tracking-tight text-slate-900">
+              Housekeeping Queue
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-[11px] font-bold text-[#176938]">
+              <span className="h-2 w-2 rounded-full bg-[#176938] animate-pulse" />
+              LIVE HOUSEKEEPING ROSTER
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500 font-normal">
+            Dirty → Cleaning → Completed. Departures land here automatically at high priority.
+          </p>
+        </div>
+      </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[
-        { label: 'Dirty', value: counts.dirty, icon: BrushIcon },
-        { label: 'Cleaning', value: counts.cleaning, icon: SparklesIcon },
-        { label: 'Completed', value: completedCount, icon: CheckCheckIcon }].
-        map((item) =>
-        <Card key={item.label} className="p-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[12px] font-semibold text-ink-soft">{item.label}</p>
-              <item.icon aria-hidden="true" className="h-4 w-4 text-ink-muted" />
+      {/* Top 4 KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              DIRTY ROOMS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800 shadow-xs">
+              <BrushIcon className="h-5 w-5" />
             </div>
-            <p className="tabular mt-3 text-[26px] font-bold leading-none text-ink">{item.value}</p>
-          </Card>
-        )}
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {counts.dirty}
+            </span>
+            <span className="text-xs font-semibold text-amber-700">Needs Cleaning</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              IN CLEANING
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-800 shadow-xs">
+              <SparklesIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {counts.cleaning}
+            </span>
+            <span className="text-xs font-semibold text-blue-700">In Progress</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              COMPLETED / CLEAN
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#dcfce7] text-[#176938] shadow-xs">
+              <CheckCheckIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {completedCount}
+            </span>
+            <span className="text-xs font-semibold text-[#176938]">Inspected & Ready</span>
+          </div>
+        </div>
+
+        <div className="glass-card-premium p-5 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              TOTAL ROOMS
+            </span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-xs">
+              <SparklesIcon className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3.5 flex items-baseline gap-2">
+            <span className="text-[32px] font-extrabold leading-none tracking-tight text-slate-900 tabular-nums">
+              {rooms.length}
+            </span>
+            <span className="text-xs font-semibold text-slate-500">Inventory</span>
+          </div>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -110,7 +187,7 @@ export function Housekeeping() {
         </SelectInput>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="glass-card-premium p-0 border border-slate-200/80 shadow-md backdrop-blur-md rounded-2xl overflow-hidden">
         <CardHeader title="Room queue" subtitle={`${list.length} rooms in this view`} />
         {list.length === 0 ?
         <EmptyState title="Queue is clear" detail="No rooms in this housekeeping state right now." /> :
@@ -122,7 +199,7 @@ export function Housekeeping() {
               (r) => r.roomId === room.id && r.arrival === ops.today && r.status !== 'cancelled'
             );
             return (
-              <li key={room.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+              <li key={room.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5 hover:bg-emerald-50/40 transition-colors">
                   <div className="w-[92px]">
                     <p className="tabular text-[16px] font-bold leading-none text-ink">{room.number}</p>
                     <p className="mt-1 text-[11px] text-ink-muted">

@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { SearchIcon, XIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, SearchIcon, XIcon } from 'lucide-react';
 
 export function Card({
   children,
   className = ''
 }: {children: React.ReactNode;className?: string;}) {
   return (
-    <section className={`relative overflow-hidden rounded-2xl border border-white/70 bg-white/75 backdrop-blur-xl shadow-md transition-all duration-200 hover:shadow-xl hover:shadow-brand-900/10 hover:border-brand-300/90 hover:bg-brand-wash before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5 before:bg-brand-gradient-v before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-200 ${className}`}>
+    <section className={`glass-card-premium relative overflow-hidden rounded-2xl border border-white/80 shadow-sm transition-all duration-200 hover:shadow-xl hover:shadow-[#176938]/10 hover:border-emerald-300/80 hover:-translate-y-0.5 ${className}`}>
       {children}
     </section>);
 
@@ -44,14 +44,11 @@ export function PrimaryButton({
       type="button"
       {...rest}
       className={[
-      'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm',
-      gradient ? 'bg-brand-gradient hover:brightness-[1.06]' : 'bg-brand-600 hover:bg-brand-500',
-      className].
-      join(' ')}>
-      
+        'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#176938] to-[#2daf57] px-4 py-2 text-xs font-bold text-white transition-all duration-150 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm cursor-pointer',
+        className
+      ].join(' ')}>
       {children}
     </button>);
-
 }
 
 export function SecondaryButton({
@@ -63,11 +60,12 @@ export function SecondaryButton({
     <button
       type="button"
       {...rest}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg border border-line/80 bg-white/80 backdrop-blur-sm px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition-all duration-150 hover:bg-white hover:text-ink hover:border-line disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
-      
+      className={[
+        'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#176938] to-[#2daf57] px-4 py-2 text-xs font-bold text-white transition-all duration-150 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm cursor-pointer',
+        className
+      ].join(' ')}>
       {children}
     </button>);
-
 }
 
 export function DangerButton({
@@ -229,14 +227,92 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...rest} className={`${controlClass} ${className}`} />;
 }
 
-export function SelectInput(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const { className = '', children, ...rest } = props;
-  const hasWidth = className.includes('w-') || className.includes('max-w-') || className.includes('min-w-');
-  const baseClass = hasWidth ? controlClass.replace('w-full', '') : controlClass;
+export function SelectInput({
+  value,
+  onChange,
+  children,
+  className = '',
+  'aria-label': ariaLabel,
+  disabled = false
+}: {
+  value?: string | number;
+  onChange?: (e: { target: { value: string } }) => void;
+  children?: React.ReactNode;
+  className?: string;
+  'aria-label'?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const parsedOptions = useMemo(() => {
+    const list: { value: string; label: string }[] = [];
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.type === 'option') {
+        const val = String(child.props.value ?? '');
+        const label = String(child.props.children ?? val);
+        list.push({ value: val, label });
+      }
+    });
+    return list;
+  }, [children]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = parsedOptions.find((opt) => String(opt.value) === String(value)) ?? parsedOptions[0];
+  const displayLabel = selectedOption?.label ?? (value !== undefined ? String(value) : '');
+
+  const handleSelect = (optValue: string) => {
+    if (onChange) {
+      onChange({ target: { value: optValue } } as any);
+    }
+    setOpen(false);
+  };
+
   return (
-    <select {...rest} className={`${baseClass} pr-8 ${className}`}>
-      {children}
-    </select>
+    <div ref={containerRef} className={`relative inline-block ${className}`}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        aria-label={ariaLabel}
+        className="flex w-full items-center justify-between gap-2.5 h-10 rounded-xl border border-slate-200/90 bg-white/90 backdrop-blur-xs px-3.5 text-xs font-bold text-slate-800 shadow-xs hover:border-[#176938] hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#176938]/20 transition-all cursor-pointer"
+      >
+        <span className="truncate">{displayLabel}</span>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180 text-[#176938]' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-60 overflow-y-auto rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-xl p-1.5 space-y-0.5 min-w-[160px]">
+          {parsedOptions.map((opt) => {
+            const isSelected = String(opt.value) === String(value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleSelect(opt.value)}
+                className={`flex w-full items-center justify-between px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+                  isSelected
+                    ? 'bg-emerald-50 text-[#176938] font-extrabold'
+                    : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {isSelected && <CheckIcon className="h-3.5 w-3.5 shrink-0 text-[#176938]" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -301,7 +377,7 @@ export function Tabs<T extends string>({
             onClick={() => onChange(tab.id)}
             className={[
             'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors duration-150',
-            isActive ? 'bg-brand-600 text-white' : 'text-ink-soft hover:bg-canvas hover:text-ink'].
+            isActive ? 'bg-[#176938] text-white shadow-sm' : 'text-ink-soft hover:bg-canvas hover:text-ink'].
             join(' ')}>
             
             {tab.label}
@@ -346,64 +422,71 @@ export function Modal({
   onClose,
   children,
   footer,
-  width = 'max-w-[560px]'
-
-
-
-
-
-
-
-
-}: {open: boolean;title: string;subtitle?: string;onClose: () => void;children: React.ReactNode;footer?: React.ReactNode;width?: string;}) {
+  width = 'max-w-[560px]',
+  hideHeader = false
+}: {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  width?: string;
+  hideHeader?: boolean;
+}) {
   return (
     <AnimatePresence>
-      {open ?
-      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8">
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           <motion.div
-          className="fixed inset-0 bg-[#0e1113]/40"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
-          onClick={onClose}
-          aria-hidden="true" />
-        
-          <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-          className={`relative w-full ${width} rounded-card border border-line bg-white shadow-panel`}
-          initial={{ opacity: 0, scale: 0.97, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 8 }}
-          transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}>
-          
-            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-              <div>
-                <h2 className="text-[16px] font-bold tracking-tight text-ink">{title}</h2>
-                {subtitle ? <p className="mt-1 text-[12px] text-ink-muted">{subtitle}</p> : null}
-              </div>
-              <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close dialog"
-              className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 hover:bg-canvas hover:text-ink">
-              
-                <XIcon aria-hidden="true" className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="px-5 py-5">{children}</div>
-            {footer ?
-          <div className="flex items-center justify-end gap-2 border-t border-line bg-[#fafbf8] px-5 py-4">
-                {footer}
-              </div> :
-          null}
-          </motion.div>
-        </div> :
-      null}
-    </AnimatePresence>);
+            className="fixed inset-0 bg-[#0c1829]/50 backdrop-blur-xs"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+            onClick={onClose}
+            aria-hidden="true"
+          />
 
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={title || 'Dialog'}
+            className={`relative flex flex-col w-full ${width} max-h-[92vh] rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden z-10`}
+            initial={{ opacity: 0, scale: 0.97, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+          >
+            {!hideHeader && title ? (
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 shrink-0 bg-white">
+                <div>
+                  <h2 className="text-[17px] font-bold tracking-tight text-slate-900">{title}</h2>
+                  {subtitle ? <p className="mt-0.5 text-[12px] text-slate-500">{subtitle}</p> : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close dialog"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                >
+                  <XIcon aria-hidden="true" className="h-4 w-4 stroke-[2.5]" />
+                </button>
+              </div>
+            ) : null}
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 no-scrollbar">{children}</div>
+
+            {footer ? (
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-xs px-6 py-3.5 shrink-0">
+                {footer}
+              </div>
+            ) : null}
+          </motion.div>
+        </div>
+      ) : null}
+    </AnimatePresence>
+  );
 }
 
 export function KeyValue({ label, value }: {label: string;value: React.ReactNode;}) {
@@ -444,6 +527,6 @@ export function TableHead({ columns }: {columns: {key: string;label: string;alig
           </th>
         )}
       </tr>
-    </thead>);
-
+    </thead>
+  );
 }
