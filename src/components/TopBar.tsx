@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BedDoubleIcon, BellIcon, CalendarDaysIcon, ClockIcon, SearchIcon, UserIcon, ChevronsUpDownIcon } from 'lucide-react';
+import { BedDoubleIcon, BellIcon, CalendarDaysIcon, SearchIcon, UserIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useHotel } from '../contexts/HotelContext';
 import { StatusPill } from './ui';
@@ -107,12 +107,8 @@ export function TopBar() {
               if (event.key === 'Enter' && results.length) select(results[0]);
             }}
             placeholder="Search guests, reservations, or room numbers..."
-            className="h-9 w-full rounded-full border border-slate-200 bg-[#f8fafc] pl-10 pr-16 text-[13px] text-slate-800 placeholder:text-slate-400 focus:border-[#176938] focus:bg-white focus:outline-none transition-all shadow-sm"
+            className="h-9 w-full rounded-full border border-slate-200 bg-[#f8fafc] pl-10 pr-4 text-[13px] text-slate-800 placeholder:text-slate-400 focus:border-[#176938] focus:bg-white focus:outline-none transition-all shadow-sm"
           />
-
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 font-mono">
-            &#8984;K
-          </span>
         </label>
 
         <AnimatePresence>
@@ -165,15 +161,8 @@ export function TopBar() {
         </AnimatePresence>
       </div>
 
-      {/* Right Controls: Shift Badge, Alerts, User Profile */}
+      {/* Right Controls: Alerts, User Profile */}
       <div className="flex items-center gap-4">
-        {/* Time / Shift Badge */}
-        <div className="flex items-center gap-2 rounded-full border border-emerald-200/80 bg-[#e8f8ee] px-3.5 py-1.5 text-[12px] font-bold text-[#176938] shadow-sm">
-          <ClockIcon className="h-4 w-4 stroke-[2.2]" />
-          <span>14:28 EST</span>
-          <span className="text-emerald-400">•</span>
-          <span>Day Shift</span>
-        </div>
 
         {/* Notifications Icon Button */}
         <div className="relative">

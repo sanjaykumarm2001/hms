@@ -275,7 +275,9 @@ export function Billing() {
         const list = payments.filter((p) => inRange(p.date) && activeResIds.has(p.reservationId));
         return {
           columns: ['Ref #', 'Date', 'Type', 'Method', 'Amount'],
-          rows: list.map((p) => [p.reference, shortDate(p.date), p.kind, p.method, money(p.amount)])
+          rows: list
+            .sort((a, b) => a.date.localeCompare(b.date) || a.reference.localeCompare(b.reference))
+            .map((p) => [p.reference, isoDate(p.date), p.kind, p.method, money(p.amount)])
         };
       }
 
@@ -355,31 +357,53 @@ export function Billing() {
   };
 
   const handleExportCSV = () => {
-    let csvContent = "data:text/csv;charset=utf-8,";
+    const escapeCell = (cell: string | number | undefined | null) => {
+      if (cell === undefined || cell === null) return '""';
+      const str = String(cell);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    let csvLines: string[] = [];
+
     if (mainTab === 'ledger') {
-      csvContent += "Guest,Code,Room,Status,Charges,Paid,Balance\n";
+      const headers = ["Guest", "Code", "Room", "Status", "Charges", "Paid", "Balance"];
+      csvLines.push(headers.map(escapeCell).join(','));
       rows.forEach(({ reservation, folio: f }) => {
-        csvContent += `"${guestName(reservation.guestId)}","${reservation.code}","${getRoom(reservation.roomId)?.number ?? ''}","${reservation.status}",${f.chargeTotal},${f.paidTotal},${f.balance}\n`;
+        const row = [
+          guestName(reservation.guestId),
+          reservation.code,
+          getRoom(reservation.roomId)?.number ?? '—',
+          reservation.status,
+          money(f.chargeTotal),
+          money(f.paidTotal),
+          money(f.balance)
+        ];
+        csvLines.push(row.map(escapeCell).join(','));
       });
     } else {
       const selectedReports = REPORTS.filter((r) => selectedReportIds.has(r.id));
       selectedReports.forEach((rep) => {
         const table = getReportTableFor(rep.id);
-        csvContent += `--- ${rep.label} Report ---\n`;
-        csvContent += table.columns.filter((c) => c !== 'Action').join(",") + "\n";
+        const cols = table.columns.filter((c) => c !== 'Action');
+        csvLines.push(cols.map(escapeCell).join(','));
         table.rows.forEach((row) => {
-          csvContent += row.slice(0, table.columns.length - (table.columns.includes('Action') ? 1 : 0)).map((cell) => `"${cell}"`).join(",") + "\n";
+          const cleanRow = row.slice(0, cols.length);
+          csvLines.push(cleanRow.map(escapeCell).join(','));
         });
-        csvContent += "\n";
+        csvLines.push('');
       });
     }
-    const encodedUri = encodeURI(csvContent);
+
+    const csvString = '\uFEFF' + csvLines.join('\r\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `Lodgely_${mainTab}_${today}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success('CSV Export downloaded successfully');
   };
 

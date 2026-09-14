@@ -387,16 +387,16 @@ export function Rooms() {
           )}
         </div>
 
-        <div className="space-y-5">
-          {selected ?
-          <>
-              <Card className="p-5">
+        <div className="space-y-4 xl:sticky xl:top-6 self-start h-fit">
+          {selected ? (
+            <>
+              <Card className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                      Room details
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                      ROOM DETAILS
                     </p>
-                    <p className="tabular mt-1 text-[28px] font-bold leading-none text-ink">
+                    <p className="tabular mt-1 text-[30px] font-extrabold leading-none text-slate-900">
                       {selected.number}
                     </p>
                   </div>
@@ -412,62 +412,72 @@ export function Rooms() {
                   <KeyValue label="Rate" value={money0(selected.rate)} />
                   <KeyValue label="View" value={selected.view} />
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-line pt-4">
-                  <span className="text-[12px] text-ink-muted">Housekeeping</span>
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <span className="text-[12px] font-medium text-slate-500">Housekeeping</span>
                   <StatusPill tone={housekeepingTone[selected.housekeeping]}>
                     {housekeepingLabel[selected.housekeeping]}
                   </StatusPill>
                 </div>
-                {selected.housekeeper ?
-              <p className="mt-2 text-[11px] text-ink-muted">
+                {selected.housekeeper ? (
+                  <p className="mt-2 text-[11px] font-medium text-slate-500">
                     Assigned to {selected.housekeeper}
-                  </p> :
-              null}
-                <div className="mt-4 flex gap-2">
-                  <SecondaryButton className="flex-1" onClick={() => navigate('/housekeeping')}>
-                    <BedDoubleIcon aria-hidden="true" className="h-4 w-4 text-brand-700" />
+                  </p>
+                ) : null}
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/housekeeping')}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#176938] hover:bg-[#12532c] text-white px-3 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    <BedDoubleIcon className="h-4 w-4" />
                     Housekeeping
-                  </SecondaryButton>
-                  <SecondaryButton className="flex-1" onClick={() => navigate('/maintenance')}>
-                    <WrenchIcon aria-hidden="true" className="h-4 w-4 text-brand-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/maintenance')}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#176938] hover:bg-[#12532c] text-white px-3 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    <WrenchIcon className="h-4 w-4" />
                     Work orders
-                  </SecondaryButton>
+                  </button>
                 </div>
               </Card>
 
-              <Card className="p-5">
-                <h2 className="text-[15px] font-semibold tracking-tight text-ink">Current guest</h2>
-                {selectedReservation ?
-              <div className="mt-3 space-y-2">
+              <Card className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm">
+                <h2 className="text-[14px] font-bold tracking-tight text-slate-900">Current guest</h2>
+                {selectedReservation ? (
+                  <div className="mt-3 space-y-2.5">
                     <Link
-                  to={`/reservations/${selectedReservation.id}`}
-                  className="block text-[13px] font-semibold text-ink hover:text-brand-700">
-                  
+                      to={`/reservations/${selectedReservation.id}`}
+                      className="block text-[14px] font-bold text-slate-900 hover:text-[#176938] transition-colors"
+                    >
                       {guestName(selectedReservation.guestId)}
                     </Link>
-                    <p className="text-[11px] text-ink-muted">
+                    <p className="text-[12px] font-medium text-slate-500">
                       {selectedReservation.code} · {shortDate(selectedReservation.arrival)} →{' '}
                       {shortDate(selectedReservation.departure)}
                     </p>
-                    <StatusPill tone={selectedReservation.status === 'in-house' ? 'green' : 'citrus'}>
-                      {selectedReservation.status === 'in-house' ? 'In house' : 'Upcoming'}
-                    </StatusPill>
-                  </div> :
-
-              <p className="mt-3 text-[12px] text-ink-muted">
+                    <div className="pt-1">
+                      <StatusPill tone={selectedReservation.status === 'in-house' ? 'green' : 'citrus'}>
+                        {selectedReservation.status === 'in-house' ? 'In house' : 'Upcoming'}
+                      </StatusPill>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2.5 text-[12px] font-medium text-slate-400">
                     No current or upcoming reservation for this room.
                   </p>
-              }
+                )}
               </Card>
 
               {selectedTickets.length ? (
-                <Card className="p-5">
-                  <h2 className="text-[15px] font-semibold tracking-tight text-ink">Open work orders</h2>
-                  <ul className="mt-3 space-y-2">
+                <Card className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm">
+                  <h2 className="text-[14px] font-bold tracking-tight text-slate-900">Open work orders</h2>
+                  <ul className="mt-3 space-y-2.5">
                     {selectedTickets.map((ticket) => (
-                      <li key={ticket.id} className="rounded-lg border border-line px-3 py-2.5">
-                        <p className="text-[12px] font-semibold text-ink">{ticket.title}</p>
-                        <p className="mt-0.5 text-[11px] text-ink-muted">
+                      <li key={ticket.id} className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                        <p className="text-[13px] font-bold text-slate-900">{ticket.title}</p>
+                        <p className="mt-1 text-[11px] font-medium text-slate-500">
                           {ticket.code} · {ticket.priority}
                           {ticket.blocksSale ? ' · blocks sale' : ''}
                         </p>
@@ -476,7 +486,8 @@ export function Rooms() {
                   </ul>
                 </Card>
               ) : null}
-            </> : null}
+            </>
+          ) : null}
         </div>
       </div>
 

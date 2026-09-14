@@ -41,24 +41,34 @@ export function Reports() {
 
   const table = useMemo<ReportTable>(() => {
     const inRange = (date: string) => date >= from && date <= to;
-    const active = reservations.filter((r) => r.status !== 'cancelled' && r.status !== 'no-show');
+    const active = reservations.filter(
+      (r) => r.status !== 'cancelled' && r.status !== 'no-show' && r.includeInReport !== false
+    );
+    const validCharges = charges.filter((charge) => {
+      const r = reservations.find((res) => res.id === charge.reservationId);
+      return !r || r.includeInReport !== false;
+    });
+    const validPayments = payments.filter((payment) => {
+      const r = reservations.find((res) => res.id === payment.reservationId);
+      return !r || r.includeInReport !== false;
+    });
 
     if (reportId === 'occupancy') {
       const days =
-      from <= to ? eachDayOfInterval({ start: parseISO(from), end: parseISO(to) }).map(isoDate) : [];
+        from <= to ? eachDayOfInterval({ start: parseISO(from), end: parseISO(to) }).map(isoDate) : [];
       return {
         columns: ['Date', 'Rooms sold', 'Occupancy', 'Room revenue', 'ADR', 'RevPAR'],
         rows: days.map((day) => {
           const sold = active.filter((r) => r.roomId && r.arrival <= day && r.departure > day);
           const revenue = sold.reduce((sum, r) => sum + r.rate, 0);
           return [
-          shortDate(day),
-          sold.length,
-          percent(rooms.length ? sold.length / rooms.length * 100 : 0),
-          money(revenue),
-          money(sold.length ? revenue / sold.length : 0),
-          money(rooms.length ? revenue / rooms.length : 0)];
-
+            shortDate(day),
+            sold.length,
+            percent(rooms.length ? (sold.length / rooms.length) * 100 : 0),
+            money(revenue),
+            money(sold.length ? revenue / sold.length : 0),
+            money(rooms.length ? revenue / rooms.length : 0)
+          ];
         })
       };
     }
@@ -66,132 +76,143 @@ export function Reports() {
     if (reportId === 'reservations') {
       return {
         columns: ['Code', 'Guest', 'Arrival', 'Departure', 'Nights', 'Room', 'Status', 'Stay value'],
-        rows: active.
-        filter((r) => inRange(r.arrival)).
-        sort((a, b) => a.arrival.localeCompare(b.arrival)).
-        map((r) => [
-        r.code,
-        guestName(r.guestId),
-        shortDate(r.arrival),
-        shortDate(r.departure),
-        nightsBetween(r.arrival, r.departure),
-        getRoom(r.roomId)?.number ?? '—',
-        r.status,
-        money(r.rate * nightsBetween(r.arrival, r.departure))]
-        )
+        rows: active
+          .filter((r) => inRange(r.arrival))
+          .sort((a, b) => a.arrival.localeCompare(b.arrival))
+          .map((r) => [
+            r.code,
+            guestName(r.guestId),
+            shortDate(r.arrival),
+            shortDate(r.departure),
+            nightsBetween(r.arrival, r.departure),
+            getRoom(r.roomId)?.number ?? '—',
+            r.status,
+            money(r.rate * nightsBetween(r.arrival, r.departure))
+          ])
       };
     }
 
     if (reportId === 'guests') {
       return {
         columns: ['Guest', 'Tier', 'Segment', 'Stays', 'Nights', 'Charges', 'Balance'],
-        rows: guests.
-        map((guest) => {
-          const stays = active.filter((r) => r.guestId === guest.id && inRange(r.arrival));
-          const nights = stays.reduce((sum, r) => sum + nightsBetween(r.arrival, r.departure), 0);
-          const chargeTotal = stays.reduce((sum, r) => sum + folio(r.id).chargeTotal, 0);
-          const balance = stays.reduce((sum, r) => sum + Math.max(0, folio(r.id).balance), 0);
-          return { guest, stays: stays.length, nights, chargeTotal, balance };
-        }).
-        filter((row) => row.stays > 0).
-        sort((a, b) => b.chargeTotal - a.chargeTotal).
-        map((row) => [
-        `${row.guest.firstName} ${row.guest.lastName}`,
-        row.guest.tier,
-        row.guest.segment,
-        row.stays,
-        row.nights,
-        money(row.chargeTotal),
-        money(row.balance)]
-        )
+        rows: guests
+          .map((guest) => {
+            const stays = active.filter((r) => r.guestId === guest.id && inRange(r.arrival));
+            const nights = stays.reduce((sum, r) => sum + nightsBetween(r.arrival, r.departure), 0);
+            const chargeTotal = stays.reduce((sum, r) => sum + folio(r.id).chargeTotal, 0);
+            const balance = stays.reduce((sum, r) => sum + Math.max(0, folio(r.id).balance), 0);
+            return { guest, stays: stays.length, nights, chargeTotal, balance };
+          })
+          .filter((row) => row.stays > 0)
+          .sort((a, b) => b.chargeTotal - a.chargeTotal)
+          .map((row) => [
+            `${row.guest.firstName} ${row.guest.lastName}`,
+            row.guest.tier,
+            row.guest.segment,
+            row.stays,
+            row.nights,
+            money(row.chargeTotal),
+            money(row.balance)
+          ])
       };
     }
 
     if (reportId === 'revenue') {
-      const map = new Map<string, {count: number;total: number;}>();
-      charges.
-      filter((charge) => inRange(charge.date)).
-      forEach((charge) => {
-        const current = map.get(charge.code) ?? { count: 0, total: 0 };
-        map.set(charge.code, {
-          count: current.count + charge.quantity,
-          total: current.total + charge.quantity * charge.unitPrice
+      const map = new Map<string, { count: number; total: number }>();
+      validCharges
+        .filter((charge) => inRange(charge.date))
+        .forEach((charge) => {
+          const current = map.get(charge.code) ?? { count: 0, total: 0 };
+          map.set(charge.code, {
+            count: current.count + charge.quantity,
+            total: current.total + charge.quantity * charge.unitPrice
+          });
         });
-      });
       const total = [...map.values()].reduce((sum, item) => sum + item.total, 0);
       return {
         columns: ['Charge code', 'Items posted', 'Revenue', 'Share'],
-        rows: [...map.entries()].
-        sort((a, b) => b[1].total - a[1].total).
-        map(([code, item]) => [
-        code,
-        item.count,
-        money(item.total),
-        percent(total ? item.total / total * 100 : 0)]
-        )
+        rows: [...map.entries()]
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([code, item]) => [
+            code,
+            item.count,
+            money(item.total),
+            percent(total ? (item.total / total) * 100 : 0)
+          ])
       };
     }
 
     if (reportId === 'payments') {
       return {
         columns: ['Date', 'Guest', 'Reservation', 'Type', 'Method', 'Reference', 'Amount'],
-        rows: payments.
-        filter((payment) => inRange(payment.date)).
-        sort((a, b) => b.date.localeCompare(a.date)).
-        map((payment) => {
-          const reservation = reservations.find((r) => r.id === payment.reservationId);
-          return [
-          shortDate(payment.date),
-          reservation ? guestName(reservation.guestId) : '—',
-          reservation?.code ?? '—',
-          payment.kind,
-          payment.method,
-          payment.reference,
-          money(payment.amount)];
-
-        })
+        rows: validPayments
+          .filter((payment) => inRange(payment.date))
+          .sort((a, b) => a.date.localeCompare(b.date) || a.reference.localeCompare(b.reference))
+          .map((payment) => {
+            const reservation = reservations.find((r) => r.id === payment.reservationId);
+            return [
+              isoDate(payment.date),
+              reservation ? guestName(reservation.guestId) : '—',
+              reservation?.code ?? '—',
+              payment.kind,
+              payment.method,
+              payment.reference,
+              money(payment.amount)
+            ];
+          })
       };
     }
 
     return {
       columns: ['Room', 'Type', 'Floor', 'Rate', 'Front office status', 'Housekeeping', 'Housekeeper'],
-      rows: [...rooms].
-      sort((a, b) => a.number.localeCompare(b.number)).
-      map((room) => [
-      room.number,
-      room.type,
-      room.floor,
-      money(room.rate),
-      ops.statusByRoom[room.id],
-      room.housekeeping,
-      room.housekeeper ?? 'Unassigned']
-      )
+      rows: [...rooms]
+        .sort((a, b) => a.number.localeCompare(b.number))
+        .map((room) => [
+          room.number,
+          room.type,
+          room.floor,
+          money(room.rate),
+          ops.statusByRoom[room.id],
+          room.housekeeping,
+          room.housekeeper ?? 'Unassigned'
+        ])
     };
   }, [
-  charges,
-  folio,
-  from,
-  getRoom,
-  guestName,
-  guests,
-  ops.statusByRoom,
-  payments,
-  reportId,
-  reservations,
-  rooms,
-  to]
-  );
+    charges,
+    folio,
+    from,
+    getRoom,
+    guestName,
+    guests,
+    ops.statusByRoom,
+    payments,
+    reportId,
+    reservations,
+    rooms,
+    to
+  ]);
 
   const meta = REPORTS.find((report) => report.id === reportId);
 
   function exportCsv() {
-    const lines = [table.columns.join(','), ...table.rows.map((row) => row.map((cell) => `"${cell}"`).join(','))];
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const escapeCell = (cell: string | number | undefined | null) => {
+      if (cell === undefined || cell === null) return '""';
+      const str = String(cell);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headerLine = table.columns.map(escapeCell).join(',');
+    const rowLines = table.rows.map((row) => row.map(escapeCell).join(','));
+    const csvString = '\uFEFF' + [headerLine, ...rowLines].join('\r\n');
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `${reportId}-${from}-to-${to}.csv`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${reportId}-${from}-to-${to}.csv`);
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast.success('Report exported', { description: `${table.rows.length} rows written to CSV.` });
   }

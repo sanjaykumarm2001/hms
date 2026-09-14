@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   ActivityIcon,
   BedDoubleIcon,
   BrushCleaningIcon,
   CalendarDaysIcon,
-  CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ConciergeBellIcon,
@@ -35,6 +34,15 @@ function NavItem({
   badgeTone?: 'amber' | 'blue' | 'red' | 'green' | 'gray';
   collapsed?: boolean;
 }) {
+  const location = useLocation();
+
+  const isCurrentActive = useMemo(() => {
+    if (to === '/reports') {
+      return location.pathname === '/reports' || location.pathname === '/billing';
+    }
+    return location.pathname === to;
+  }, [location.pathname, to]);
+
   const getBadgeClass = (isActive: boolean) => {
     if (isActive) return 'bg-white/20 text-white';
     switch (badgeTone) {
@@ -55,43 +63,37 @@ function NavItem({
     <NavLink
       to={to}
       title={collapsed ? `${label}${badge ? ` (${badge})` : ''}` : undefined}
-      className={({ isActive }) =>
-        [
-          'group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150',
-          collapsed ? 'justify-center px-2' : '',
-          isActive
-            ? 'bg-[#176938] text-white shadow-sm'
-            : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]'
-        ].join(' ')
-      }
+      className={[
+        'group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150',
+        collapsed ? 'justify-center px-2' : '',
+        isCurrentActive
+          ? 'bg-[#176938] text-white shadow-sm'
+          : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]'
+      ].join(' ')}
     >
-      {({ isActive }) => (
-        <>
-          <Icon
-            aria-hidden="true"
-            className={[
-              'h-[19px] w-[19px] shrink-0',
-              isActive ? 'text-white' : 'text-[#64748b] group-hover:text-[#176938]'
-            ].join(' ')}
-            strokeWidth={2}
-          />
+      <Icon
+        aria-hidden="true"
+        className={[
+          'h-[19px] w-[19px] shrink-0',
+          isCurrentActive ? 'text-white' : 'text-[#64748b] group-hover:text-[#176938]'
+        ].join(' ')}
+        strokeWidth={2}
+      />
 
-          {!collapsed && <span className="truncate flex-1">{label}</span>}
-          {badge !== undefined && badge > 0 ? (
-            <span
-              className={[
-                'tabular rounded-full px-2 py-0.5 text-[11px] font-bold',
-                collapsed
-                  ? 'absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center p-0 text-[9px]'
-                  : 'ml-auto',
-                getBadgeClass(isActive)
-              ].join(' ')}
-            >
-              {badge}
-            </span>
-          ) : null}
-        </>
-      )}
+      {!collapsed && <span className="truncate flex-1">{label}</span>}
+      {badge !== undefined && badge > 0 ? (
+        <span
+          className={[
+            'tabular rounded-full px-2 py-0.5 text-[11px] font-bold',
+            collapsed
+              ? 'absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center p-0 text-[9px]'
+              : 'ml-auto',
+            getBadgeClass(isCurrentActive)
+          ].join(' ')}
+        >
+          {badge}
+        </span>
+      ) : null}
     </NavLink>
   );
 }
@@ -167,22 +169,15 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Property Switcher Card */}
+      {/* Property Card */}
       {!collapsed && (
-        <div className="mx-3.5 mt-3 mb-2 rounded-xl border border-slate-200 bg-[#f8fafc] p-3 shadow-sm flex items-center justify-between">
-          <div className="min-w-0 pr-2">
-            <p className="text-[13px] font-bold text-slate-900 truncate tracking-tight">
-              {settings.propertyName || 'Lodgely Resort & Hotel'}
-            </p>
-            <p className="text-[11px] font-medium text-slate-500 mt-0.5 truncate flex items-center gap-1.5">
-              <span>{ops.counts.total || 40} rooms</span>
-              <span>•</span>
-              <span>Active Shift</span>
-            </p>
-          </div>
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#dcfce7] text-[#16a34a]">
-            <CheckCircle2Icon className="h-4 w-4 stroke-[2.5]" />
-          </div>
+        <div className="mx-3.5 mt-3 mb-2 rounded-xl border border-slate-200 bg-[#f8fafc] p-3 shadow-sm">
+          <p className="text-[13px] font-bold text-slate-900 truncate tracking-tight">
+            {settings.propertyName || 'Lodgely Resort & Hotel'}
+          </p>
+          <p className="text-[11px] font-medium text-slate-500 mt-0.5 truncate">
+            {ops.counts.total || 40} rooms
+          </p>
         </div>
       )}
 
@@ -192,30 +187,6 @@ export function Sidebar() {
           <NavItem key={item.to} {...item} collapsed={collapsed} />
         ))}
       </nav>
-
-      {/* Bottom Status Card */}
-      {!collapsed && (
-        <div className="mx-3.5 mb-4 shrink-0 rounded-xl border border-slate-200 bg-[#f8fafc] px-3.5 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22c55e]"></span>
-            </span>
-            <div className="min-w-0">
-              <p className="text-[12px] font-bold text-slate-800 truncate">PMS Cloud Online</p>
-              <p className="text-[10px] font-medium text-slate-500 truncate">Latency 24ms</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            title="Refresh status"
-            aria-label="Refresh status"
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-          >
-            <RefreshCwIcon className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
     </aside>
   );
 }

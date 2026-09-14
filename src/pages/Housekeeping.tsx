@@ -23,7 +23,7 @@ import {
   roomStatusTone } from
 '../utils/tone';
 
-type Filter = 'dirty' | 'cleaning' | 'completed' | 'all';
+type Filter = 'dirty' | 'cleaning' | 'inspected' | 'completed' | 'all';
 
 function nextAction(status: HousekeepingStatus): { label: string; next: HousekeepingStatus } | null {
   if (status === 'dirty') return { label: 'Start cleaning', next: 'cleaning' };
@@ -51,7 +51,8 @@ export function Housekeeping() {
     filter((room) => {
       if (filter === 'dirty') return room.housekeeping === 'dirty';
       if (filter === 'cleaning') return room.housekeeping === 'cleaning';
-      if (filter === 'completed') return room.housekeeping === 'clean' || room.housekeeping === 'inspected';
+      if (filter === 'inspected') return room.housekeeping === 'clean';
+      if (filter === 'completed') return room.housekeeping === 'inspected';
       return true;
     }).
     filter((room) => priority === 'all' ? true : room.housekeepingPriority === priority).
@@ -66,7 +67,8 @@ export function Housekeeping() {
     return {
       dirty: rooms.filter((r) => r.housekeeping === 'dirty').length,
       cleaning: rooms.filter((r) => r.housekeeping === 'cleaning').length,
-      completed: rooms.filter((r) => r.housekeeping === 'clean' || r.housekeeping === 'inspected').length
+      inspected: rooms.filter((r) => r.housekeeping === 'clean').length,
+      completed: rooms.filter((r) => r.housekeeping === 'inspected').length
     };
   }, [rooms]);
 
@@ -166,13 +168,15 @@ export function Housekeeping() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs
           tabs={[
-          { id: 'dirty', label: 'Dirty', count: counts.dirty },
-          { id: 'cleaning', label: 'Cleaning', count: counts.cleaning },
-          { id: 'completed', label: 'Completed', count: completedCount },
-          { id: 'all', label: 'All rooms', count: rooms.length }]
-          }
+            { id: 'dirty', label: 'Dirty', count: counts.dirty },
+            { id: 'cleaning', label: 'Cleaning', count: counts.cleaning },
+            { id: 'inspected', label: 'Inspected', count: counts.inspected },
+            { id: 'completed', label: 'Completed', count: completedCount },
+            { id: 'all', label: 'All rooms', count: rooms.length }
+          ]}
           active={filter}
-          onChange={(next) => setFilter(next as Filter)} />
+          onChange={(next) => setFilter(next as Filter)}
+        />
         
         <SelectInput
           value={priority}
@@ -255,24 +259,35 @@ export function Housekeeping() {
                       {room.housekeepingPriority}
                     </StatusPill>
                   </div>
-                  {action ?
-                <PrimaryButton
-                  className="px-3 py-2"
-                  onClick={() => setHousekeeping(room.id, action.next)}>
-                  
+                  {filter === 'inspected' || room.housekeeping === 'clean' ? (
+                    <div className="flex items-center gap-2">
+                      <PrimaryButton
+                        className="px-3 py-2"
+                        onClick={() => setHousekeeping(room.id, 'inspected')}>
+                        Mark as inspected
+                      </PrimaryButton>
+                      <SecondaryButton
+                        className="px-3 py-2"
+                        onClick={() => setHousekeeping(room.id, 'dirty')}>
+                        Send back to dirty
+                      </SecondaryButton>
+                    </div>
+                  ) : action ? (
+                    <PrimaryButton
+                      className="px-3 py-2"
+                      onClick={() => setHousekeeping(room.id, action.next)}>
                       {action.label}
-                    </PrimaryButton> :
-
-                <SecondaryButton
-                  className="px-3 py-2"
-                  onClick={() => setHousekeeping(room.id, 'dirty')}>
-                  
+                    </PrimaryButton>
+                  ) : (
+                    <SecondaryButton
+                      className="px-3 py-2"
+                      onClick={() => setHousekeeping(room.id, 'dirty')}>
                       Send back to dirty
                     </SecondaryButton>
-                }
-                </li>);
-
-          })}
+                  )}
+                </li>
+              );
+            })}
           </ul>
         }
       </Card>

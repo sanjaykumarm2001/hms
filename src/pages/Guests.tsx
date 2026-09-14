@@ -21,13 +21,24 @@ export function Guests() {
   const [tier, setTier] = useState<'all' | GuestTier>('all');
   const [segment, setSegment] = useState<'all' | GuestSegment>('all');
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    country: string;
+    company: string;
+    tier: GuestTier;
+    segment: GuestSegment;
+  }>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     country: '',
-    company: ''
+    company: '',
+    tier: 'Standard',
+    segment: 'Leisure'
   });
   const [error, setError] = useState('');
 
@@ -62,7 +73,7 @@ export function Guests() {
       return;
     }
     const guest = createGuest(draft);
-    setDraft({ firstName: '', lastName: '', email: '', phone: '', country: '', company: '' });
+    setDraft({ firstName: '', lastName: '', email: '', phone: '', country: '', company: '', tier: 'Standard', segment: 'Leisure' });
     setError('');
     setOpen(false);
     navigate(`/guests/${guest.id}`);
@@ -305,6 +316,28 @@ export function Guests() {
               value={draft.lastName}
               onChange={(e) => setDraft({ ...draft, lastName: e.target.value })}
             />
+          </Field>
+          <Field label="Guest Tier">
+            <SelectInput
+              value={draft.tier}
+              onChange={(e) => setDraft({ ...draft, tier: e.target.value as GuestTier })}
+            >
+              <option value="Standard">Standard</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+              <option value="Platinum">Platinum</option>
+            </SelectInput>
+          </Field>
+          <Field label="Guest Segment">
+            <SelectInput
+              value={draft.segment}
+              onChange={(e) => setDraft({ ...draft, segment: e.target.value as GuestSegment })}
+            >
+              <option value="Leisure">Leisure</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Group">Group</option>
+              <option value="OTA">OTA</option>
+            </SelectInput>
           </Field>
           <Field label="Email">
             <TextInput

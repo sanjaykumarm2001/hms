@@ -153,36 +153,6 @@ export function Settings() {
           </div>
         </Card>
 
-        <Card className="p-5">
-          <h2 className="text-[15px] font-semibold tracking-tight text-ink">Operating times</h2>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Check-in from">
-              <TextInput
-                type="time"
-                value={draft.checkInTime}
-                onChange={(event) => setDraft({ ...draft, checkInTime: event.target.value })} />
-              
-            </Field>
-            <Field label="Check-out by">
-              <TextInput
-                type="time"
-                value={draft.checkOutTime}
-                onChange={(event) => setDraft({ ...draft, checkOutTime: event.target.value })} />
-              
-            </Field>
-            <Field label="Night audit">
-              <TextInput
-                type="time"
-                value={draft.auditTime}
-                onChange={(event) => setDraft({ ...draft, auditTime: event.target.value })} />
-              
-            </Field>
-          </div>
-          <p className="mt-4 rounded-lg bg-canvas px-3 py-2.5 text-[12px] text-ink-soft">
-            {ops.departures.length} departures are measured against the {draft.checkOutTime} checkout
-            time for late-departure alerts.
-          </p>
-        </Card>
 
         <Card className="overflow-hidden">
           <CardHeader title="Room types & rates" subtitle="Base rates drive new reservation pricing" />

@@ -45,6 +45,7 @@ export function CheckInDialog({
 
   // Regulatory & Accompanying State
   const [regulatoryReport, setRegulatoryReport] = useState<'standard' | 'form-c'>('standard');
+  const [excludeInReport, setExcludeInReport] = useState(false);
   const [accompanying, setAccompanying] = useState<string[]>([]);
   const [accompanyingDraft, setAccompanyingDraft] = useState('');
 
@@ -69,8 +70,9 @@ export function CheckInDialog({
       setEmail(guest.email || '');
       setIdType(guest.idType || 'Passport');
       setIdNumber(guest.idNumber || '');
+      setExcludeInReport(reservation?.includeInReport === false);
     }
-  }, [guest, open]);
+  }, [guest, reservation, open]);
 
   const activeRoomId = roomId || reservation?.roomId || '';
   const room = rooms.find((r) => r.id === activeRoomId);
@@ -128,7 +130,8 @@ export function CheckInDialog({
       depositAmount: deposit,
       method,
       idVerified: Boolean(idNumber.trim() || guest.idNumber),
-      registrationSigned: true
+      registrationSigned: true,
+      includeInReport: !excludeInReport
     });
 
     setError('');
@@ -358,6 +361,19 @@ export function CheckInDialog({
               </div>
             )}
           </div>
+
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-amber-200/80 bg-amber-50/60 p-3 text-[13px] font-semibold text-amber-900 transition-all hover:bg-amber-100/70">
+            <input
+              type="checkbox"
+              checked={excludeInReport}
+              onChange={(e) => setExcludeInReport(e.target.checked)}
+              className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+            />
+            <div>
+              <span className="font-bold">Exclude in report</span>
+              <p className="text-[11px] font-normal text-amber-800">Check to exclude this stay & charges from reporting calculations</p>
+            </div>
+          </label>
         </div>
 
         {/* Advance Payment Card */}

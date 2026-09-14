@@ -43,16 +43,23 @@ export function Maintenance() {
   }, [staff]);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [newRoomId, setNewRoomId] = useState(rooms[0]?.id ?? '');
+  const [newRoomId, setNewRoomId] = useState('');
   const [newCategory, setNewCategory] = useState<'HVAC' | 'Plumbing' | 'Electrical' | 'Carpentry' | 'Appliance' | 'Other'>('HVAC');
   const [newPriority, setNewPriority] = useState<TicketPriority>('normal');
   const [newDesc, setNewDesc] = useState('');
+  const [createError, setCreateError] = useState('');
 
-  const handleCreateTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDesc.trim()) return;
+  const handleCreateTicket = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newDesc.trim()) {
+      setCreateError('Please enter a description of the issue.');
+      return;
+    }
     const targetRoomId = newRoomId || rooms[0]?.id;
-    if (!targetRoomId) return;
+    if (!targetRoomId) {
+      setCreateError('Please select a valid room.');
+      return;
+    }
     const targetRoom = getRoom(targetRoomId);
     const created = addTicket({
       roomId: targetRoomId,
@@ -62,9 +69,12 @@ export function Maintenance() {
       description: newDesc.trim(),
       blocksSale: newPriority === 'urgent' || newPriority === 'high'
     });
-    setSelectedId(created.id);
+    if (created && created.id) {
+      setSelectedId(created.id);
+    }
     setCreateOpen(false);
     setNewDesc('');
+    setCreateError('');
   };
 
   const list = useMemo(
@@ -108,7 +118,11 @@ export function Maintenance() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <PrimaryButton onClick={() => setCreateOpen(true)}>
+          <PrimaryButton onClick={() => {
+            setCreateError('');
+            setNewRoomId(rooms[0]?.id ?? '');
+            setCreateOpen(true);
+          }}>
             <PlusIcon aria-hidden="true" className="h-4 w-4" />
             New ticket
           </PrimaryButton>
@@ -377,19 +391,31 @@ export function Maintenance() {
         open={createOpen}
         title="Create Maintenance Ticket"
         subtitle="Report an issue or work order for a room."
-        onClose={() => setCreateOpen(false)}
+        onClose={() => {
+          setCreateOpen(false);
+          setCreateError('');
+        }}
         footer={
           <>
-            <SecondaryButton onClick={() => setCreateOpen(false)}>Cancel</SecondaryButton>
-            <PrimaryButton gradient onClick={handleCreateTicket}>
+            <SecondaryButton onClick={() => { setCreateOpen(false); setCreateError(''); }}>Cancel</SecondaryButton>
+            <PrimaryButton gradient onClick={() => handleCreateTicket()}>
               Create Ticket
             </PrimaryButton>
           </>
         }
       >
         <form onSubmit={handleCreateTicket} className="space-y-4">
+          {createError ? (
+            <p role="alert" className="rounded-xl bg-red-50 p-3 text-[12px] font-semibold text-red-600 border border-red-200">
+              {createError}
+            </p>
+          ) : null}
+
           <Field label="Target Room">
-            <SelectInput value={newRoomId} onChange={(e) => setNewRoomId(e.target.value)}>
+            <SelectInput
+              value={newRoomId || rooms[0]?.id || ''}
+              onChange={(e) => setNewRoomId(e.target.value)}
+            >
               {rooms.map((r) => (
                 <option key={r.id} value={r.id}>
                   Room {r.number} ({r.type} · Floor {r.floor})
